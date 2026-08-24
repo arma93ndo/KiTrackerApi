@@ -90,6 +90,6 @@ appsettings.Local.json
 # ==========================================
 # SQLite Database (si no deseas subir la DB viva)
 # ==========================================
-#*.db
+*.db
 *.db-shm
 *.db-wal
