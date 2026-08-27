@@ -8,10 +8,10 @@ public class Lectura
     public int Id { get; set; }
     [Range(1, int.MaxValue, ErrorMessage = "El ID del luchador debe ser positivo.")] // Seguridad referencial en una llave foránea.
     public int LuchadorId { get; set; } // Llave foránea (FK). Identifica a quién pertenece una lectura específica.
-    public Luchador? Luchador { get; set; } // Propiedad de navegación (relación N:1 con Luchador).
+    public Luchador? Luchador { get; set; } = null!;// Propiedad de navegación (relación N:1 con Luchador).
     [Range(1, int.MaxValue, ErrorMessage = "El ID del dispositivo debe ser positivo.")] // Seguridad referencial en una llave foránea.
     public int DispositivoId { get; set; } // Llave foránea (FK). Identifica qué dispositivo tomó la captura.
-    public Dispositivo? Dispositivo { get; set; } // Propiedad de navegación (relación 1:N con Dispositivo).
+    public Dispositivo? Dispositivo { get; set; } = null!; // Propiedad de navegación (relación 1:N con Dispositivo).
     [Required(ErrorMessage = "El puntaje de ki es obligatorio.")]
     [Range(0, long.MaxValue, ErrorMessage = "El nivel del ki no puede ser un valor negativo.")]
     public long NivelKi { get; set; } // El número calculado de unidades de energía. Se usa long porque los valores
