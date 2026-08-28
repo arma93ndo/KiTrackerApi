@@ -15,36 +15,131 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<ILuchadorRepository, LuchadorRepository>();
 builder.Services.AddScoped<IDispositivoRepository, DispositivoRepository>();
 builder.Services.AddScoped<ILecturaRepository, LecturaRepository>();
+// Registro la Unit of Work (UoW) que dirige a los ya mencionados repositorios.
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>(); 
 
 
 var app = builder.Build();
 
-#region BLOQUE DE PRUEBA SIN ENDPOINTS HTTP
-// Borrar luego de probar.
-using(var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    var context = services.GetRequiredService<ApplicationDbContext>();
+#region BLOQUE DE PRUEBA REPOSITORIOS SIN ENDPOINTS HTTP
+// // Borrar luego de probar.
+// using(var scope = app.Services.CreateScope())
+// {
+//     var services = scope.ServiceProvider;
+//     var context = services.GetRequiredService<ApplicationDbContext>();
 
-    await DbInitializer.SeedAsync(context);
-    Console.WriteLine("🌱 BBDD sembrada con Especies y Colores satisfactoriamente.");
+//     await DbInitializer.SeedAsync(context);
 
-    // // Se asegura de que la BBDD de SQLite exista y tenga las tablas pertinentes.
-    // await context.Database.EnsureCreatedAsync();
+//     // Inyectamos nuestros repositorios.
+//     var luchadorRepo = services.GetRequiredService<ILuchadorRepository>();
+//     var lecturaRepo = services.GetRequiredService<ILecturaRepository>();
+//     var especieRepo = services.GetRequiredService<IRepository<Especie>>();
+//     Console.WriteLine("🚀\n--- INICIANDO PRUEBA DE REPOSITORIOS ---");
+//     // 1. Probar la inserción con Repository (vía herencia).
+//     var especiesDisponibles = await especieRepo.GetAllAsync();
+//     var especieUno = especiesDisponibles.First();
 
-    // // Inyectamos nuestros repositorios.
-    // var luchadorRepo = services.GetRequiredService<ILuchadorRepository>();
-    // var lecturaRepo = services.GetRequiredService<ILecturaRepository>();
-    // Console.WriteLine("--- INICIANDO PRUEBA DE REPOSITORIOS ---");
-    // // 1. Probar la inserción con Repository (vía herencia).
-    // var nuevoLuchador = new Luchador
-    // {
-    //     Nombre = "Goku",
-    //     EspecieId = 1;
-    // };
-}
+//     var nuevoLuchador = new Luchador
+//     {
+//         Nombre = "Goku",
+//         EspecieId = especieUno.Id // Se asume que ya corrió el sembrador de Especies y Colores.
+//     };
+
+//     await luchadorRepo.AddAsync(nuevoLuchador);
+//     await context.SaveChangesAsync(); // A falta de una Unit of Work (UoW), guardamos los cambios así.
+//     Console.WriteLine($"✅ Luchador guardado con ID: {nuevoLuchador.Id}");
+
+//     // 2. Probar método en específico (GetByIdConEspecieAsync).
+//     var luchadorConSuEspecie = await luchadorRepo.GetByIdConEspecieAsync(nuevoLuchador.Id);
+//     Console.WriteLine($"✅ Consultado: {luchadorConSuEspecie?.Nombre} - Especie: {luchadorConSuEspecie?.Especie?.Descripcion ?? "Sin Especie"}");
+
+//     // 3. Probar método de lectura avanzada.
+//     var lecturasTop = await lecturaRepo.GetTopKiLecturasAsync(5);
+//     Console.WriteLine($"✅ Lecturas top encontradas: {lecturasTop.Count()}");
+
+//     // 4. Consultar con .Include().
+//     var luchadorGuardado = await luchadorRepo.GetByIdConEspecieAsync(nuevoLuchador.Id);
+//     Console.WriteLine($"✅ Luchador: {luchadorGuardado?.Nombre} | Especie: {luchadorGuardado?.Especie?.Descripcion}");
+
+//     Console.WriteLine($"🚀\n--- PRUEBA FINALIZADA CON ÉXITO ---\n");
+// }
 #endregion
+#region #region BLOQUE DE PRUEBA UNIDAD DE TRABAJO SIN ENDPOINTS HTTP
+// using(var scope = app.Services.CreateScope())
+// {
+//     var services = scope.ServiceProvider;
+//     var context = services.GetRequiredService<ApplicationDbContext>();
 
+//     // 1. Me aseguro de sembrar datos de prueba necesarios en la BBDD.
+//     await DbInitializer.SeedAsync(context);
+
+//     // 2. Resuelvo la dependencia al servicio de IUnitOfWork desde el contenedor IoC.
+//     var unitOfWork = services.GetRequiredService<IUnitOfWork>();
+
+//     Console.WriteLine("\n🚀 --- INICIANDO PRUEBA DE UNIT OF WORK ---");
+
+//     // 3. Obtener una especie existente usando el repositorio genérico dentro de la UoW.
+//     var especies = await unitOfWork.Especies.GetAllAsync();
+//     var primeraEspecie = especies.First();
+
+//     // 4. Crear un nuevo Luchador y almacenarlo mediante la UoW.
+//     var nuevoLuchador = new Luchador
+//     {
+//         Nombre = "Gohan",
+//         EspecieId = primeraEspecie.Id
+//     };
+
+//     await unitOfWork.Luchadores.AddAsync(nuevoLuchador);
+
+//     // 5. Simulo una nueva operación (CRUD) en la misma transacción. Registro una nueva lectura.
+//     // Primero necesito un dispositivo, creo uno.
+//     var dispositivos = await unitOfWork.Dispositivos.GetAllAsync();
+//     Dispositivo dispositivo;
+//     var colores = await unitOfWork.Colores.GetAllAsync();
+//     Color color;
+//     if(!dispositivos.Any())
+//     { // No hay ninguno, así que inserto uno nuevo.
+//         color = colores.First();
+//         dispositivo = new Dispositivo
+//         {
+//             Fingerprint = "SCOUTER-001",
+//             Tipo = "mobile",
+//             ModeloHardware = "iPhone 17",
+//             ColorId = color.Id // Asumo que ya se ejecutó el seeder de la BBDD.
+//         };
+//         await unitOfWork.Dispositivos.AddAsync(dispositivo);
+//         await unitOfWork.SaveChangesAsync(); // Guardo el dispositivo para obtener su ID (autogenerado por la BBDD).
+//     }
+//     else
+//     {
+//         // Ya existe alguno, así que lo reutilizo.
+//         dispositivo = dispositivos.First();
+//     }
+
+//     // Registramos una lectura de Ki vinculada al nuevo luchador y al nuevo dispositivo.
+//     var nuevaLectura = new Lectura
+//     {
+//         LuchadorId = nuevoLuchador.Id, // Estos IDs se asignan automáticamente al rastrear la entidad.
+//         DispositivoId = dispositivo.Id,
+//         NivelKi = 1500
+//     };
+
+//     await unitOfWork.Lecturas.AddAsync(nuevaLectura);
+
+//     // 6. Confirmar (COMMIT) toda la transacción atómica con una sola llamada a .SaveChangesAsync();
+//     var registrosAfectados = await unitOfWork.SaveChangesAsync();
+//     Console.WriteLine($"✅ Transacción completada con éxito. Registros afectados en SQLite: {registrosAfectados}");
+
+//     // 7. Comprobar que los datos se guardaron satisfactoriamente usando métodos especializados.
+//     var luchadorRecuperado = await unitOfWork.Luchadores.GetByIdConEspecieAsync(nuevoLuchador.Id);
+//     Console.WriteLine($"✅ Luchador recuperado: {luchadorRecuperado?.Nombre} (Especie: {luchadorRecuperado?.Especie?.Descripcion})");
+
+//     var ultimaLectura = await unitOfWork.Lecturas.GetUltimaLecturaByLuchadorIdAsync(nuevoLuchador.Id);
+//     Console.WriteLine($"✅ Última lectura de Ki registrada para ese luchador: {ultimaLectura?.NivelKi}");
+
+//     Console.WriteLine("🚀 --- PRUEBA DE UNIT OF WORK FINALIZADA ---\n");
+// }
+#endregion
 
 using (var scope = app.Services.CreateScope())
 {

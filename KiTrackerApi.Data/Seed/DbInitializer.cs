@@ -1,5 +1,6 @@
 using KiTrackerApi.Data.Context;
 using KiTrackerApi.Core.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace KiTrackerApi.Data.Seed;
 
@@ -11,7 +12,7 @@ public static class DbInitializer
         var dbSet1 = context.Set<Especie>();
 
         // 1. Aseguro que la BBDD exista.
-        await context.Database.EnsureCreatedAsync();
+        await context.Database.MigrateAsync();
 
         // 2. Poblar la tabla Especie (en caso de estar vacía).
         if(!dbSet1.Any())
@@ -36,9 +37,9 @@ public static class DbInitializer
         {
             var colores = new List<Color>
             {
-                new Color { Descripcion = "Verde", CodigoHex = "1E5228" }, // Verde como el de Raditz.
-                new Color { Descripcion = "Rojo", CodigoHex = "AF131C" }, // Rojo como el de Vegeta.
-                new Color { Descripcion = "Azul", CodigoHex = "2732A4" } // Azul como el de Nappa.
+                new Color { Descripcion = "Verde", CodigoHex = "1E5228FF" }, // Verde como el de Raditz.
+                new Color { Descripcion = "Rojo", CodigoHex = "AF131CFF" }, // Rojo como el de Vegeta.
+                new Color { Descripcion = "Azul", CodigoHex = "2732A4FF" } // Azul como el de Nappa.
             };
 
             await dbSet2.AddRangeAsync(colores);
@@ -46,5 +47,6 @@ public static class DbInitializer
 
         // 4. Guardar los registros en SQLite.
         await context.SaveChangesAsync();
+        Console.WriteLine("🌱 BBDD sembrada con Especies y Colores satisfactoriamente.");
     }
 }
