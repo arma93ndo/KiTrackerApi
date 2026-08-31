@@ -1,9 +1,12 @@
 using KiTrackerApi.Data.Context;
 using Microsoft.EntityFrameworkCore;
+using KiTrackerApi.Core.Interfaces;
 using KiTrackerApi.Core.Interfaces.Repository;
 using KiTrackerApi.Core.Models;
 using KiTrackerApi.Data.Repository;
 using KiTrackerApi.Data.Seed;
+using KiTrackerApi.Core.Features.Especies;
+using KiTrackerApi.Core.Features.Especies.DTOs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +19,10 @@ builder.Services.AddScoped<ILuchadorRepository, LuchadorRepository>();
 builder.Services.AddScoped<IDispositivoRepository, DispositivoRepository>();
 builder.Services.AddScoped<ILecturaRepository, LecturaRepository>();
 // Registro la Unit of Work (UoW) que dirige a los ya mencionados repositorios.
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>(); 
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// Registro los servicios específicos de mis modelos.
+builder.Services.AddScoped<IEspecieService, EspecieService>();
 
 
 var app = builder.Build();
@@ -64,7 +70,7 @@ var app = builder.Build();
 //     Console.WriteLine($"🚀\n--- PRUEBA FINALIZADA CON ÉXITO ---\n");
 // }
 #endregion
-#region #region BLOQUE DE PRUEBA UNIDAD DE TRABAJO SIN ENDPOINTS HTTP
+#region BLOQUE DE PRUEBA UNIDAD DE TRABAJO SIN ENDPOINTS HTTP
 // using(var scope = app.Services.CreateScope())
 // {
 //     var services = scope.ServiceProvider;
@@ -138,6 +144,76 @@ var app = builder.Build();
 //     Console.WriteLine($"✅ Última lectura de Ki registrada para ese luchador: {ultimaLectura?.NivelKi}");
 
 //     Console.WriteLine("🚀 --- PRUEBA DE UNIT OF WORK FINALIZADA ---\n");
+// }
+#endregion
+#region BLOQUE DE PRUEBA SERVICIO ESPECIES SIN ENDPOINTS HTTP
+// using (var scope = app.Services.CreateScope())
+// {
+//     var services = scope.ServiceProvider;
+//     var context = services.GetRequiredService<ApplicationDbContext>();
+
+//     // 1. Siembro los datos mínimos necesarios como para una prueba vía mi sembrador.
+//     await DbInitializer.SeedAsync(context);
+
+//     // 2. Resolver la dependencia al servicio IEspecieService desde el contendor IoC.
+//     var especieService = services.GetRequiredService<IEspecieService>();
+
+//     Console.WriteLine("\n🚀 --- INICIANDO PRUEBAS DE ESPECIESERVICE ---");
+
+//     // Prueba 1. Crear una especie sin enviar un multiplicador (deberá tomar el valor por omisión definido dentro del servicio).
+//     var dtoSinMultiplicador = new CrearEspecieDto
+//     {
+//         Descripcion = "Bioandroide"
+//     };
+//     var respuesta1 = await especieService.CrearEspecieAsync(dtoSinMultiplicador);
+//     Console.WriteLine($"✅ Test 1 (Sin Multiplicador) -> Creado ID: {respuesta1.Id}, Descripción: {respuesta1.Descripcion}");
+
+//     // Prueba 2. Crear una especie enviando un multiplicador (debe ser diferente al valor por omisión).
+//     var dtoConMultiplicador = new CrearEspecieDto
+//     {
+//         Descripcion = "Glindiana",
+//         Multiplicador = 50.0
+//     };
+//     var respuesta2 = await especieService.CrearEspecieAsync(dtoConMultiplicador);
+//     Console.WriteLine($"✅ Test 2 (Con Multiplicador) -> Creado ID: {respuesta2.Id}, Descripción: {respuesta2.Descripcion}");
+
+//     // Prueba 3. Consultar todas las especies para verificar su persistencia en SQLite.
+//     var todasLasEspecies = await especieService.ObtenerTodasAsync();
+//     Console.WriteLine($"\n📋 Total de especies registradas en BD: {todasLasEspecies.Count()}");
+//     foreach(EspecieRespuestaDto e in todasLasEspecies)
+//     {
+//         Console.WriteLine($" - ID: {e.Id} | {e.Descripcion}");
+//     }
+
+//     // Prueba 4. Actualizar una especie por Id.
+//     var modificado = new ActualizarEspecieDto
+//     {
+//         Descripcion = "ayiya buba la tita",
+//         Multiplicador = 3.0
+//     };
+
+//     bool prueba4 = await especieService.ActualizarEspecieByIdAsync(6, modificado);
+//     Console.WriteLine($"Resultado de prueba 4: {prueba4}");
+
+//     // Prueba 5. Actualizar una especie por su nombre.
+//     var modificado2 = new ActualizarEspecieDto
+//     {
+//         Descripcion = "pustulio"    
+//     };
+
+//     bool prueba5 = await especieService.ActualizarEspecieByNombreAsync("glinDIANA", modificado2);
+//     Console.WriteLine($"Resultado prueba 5: {prueba5}");
+
+//     // Prueba 6. Eliminar una especie por Id.
+//     bool prueba6 = await especieService.EliminarEspecieByIdAsync(6);
+//     Console.WriteLine($"Resultado prueba 6: {prueba6}");
+
+//     // Prueba 7. Eliminar una especie por su nombre.
+//     bool prueba7 = await especieService.EliminarEspecieByNombreAsync("PUSTULIO");
+//     Console.WriteLine($"Resultado prueba 7: {prueba7}");
+    
+
+//     Console.WriteLine("🚀 --- PRUEBAS FINALIZADAS CON ÉXITO ---\n");
 // }
 #endregion
 

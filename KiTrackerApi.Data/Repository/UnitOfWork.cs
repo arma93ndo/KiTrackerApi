@@ -1,3 +1,4 @@
+using KiTrackerApi.Core.Interfaces;
 using KiTrackerApi.Core.Interfaces.Repository;
 using KiTrackerApi.Core.Models;
 using KiTrackerApi.Data.Context;

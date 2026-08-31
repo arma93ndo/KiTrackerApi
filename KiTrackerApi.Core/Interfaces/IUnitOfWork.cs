@@ -1,6 +1,7 @@
 using KiTrackerApi.Core.Models;
+using KiTrackerApi.Core.Interfaces.Repository;
 
-namespace KiTrackerApi.Core.Interfaces.Repository;
+namespace KiTrackerApi.Core.Interfaces;
 
 public interface IUnitOfWork : IDisposable
 {
