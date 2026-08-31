@@ -51,7 +51,7 @@ public class EspecieService : IEspecieService
         // 1. Limpio la cadena recibida para la búsqueda.
         string limpio = nombre.SanitizarNombrePropio();
 
-        // 2. Obtengo la instancia de la base de datos buscada por el usuario, ignorando mayúsculas y minúsculas.
+        // 2. Obtengo la instancia de la BBDD buscada por el usuario, ignorando mayúsculas y minúsculas.
         var especies = await _uow.Especies.GetAllAsync();
 
         var especie = (especies ?? Enumerable.Empty<Especie>())

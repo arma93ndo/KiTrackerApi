@@ -1,16 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace KiTrackerApi.Core.Models;
+namespace KiTrackerApi.Core.Features.Colores.DTOs;
 
-public class Color
+public class CrearColorDto
 {
-    [Key]
-    public int Id { get; set; }
     [Required(ErrorMessage = "La descripción del color es obligatoria.")]
     [StringLength(70, MinimumLength = 2, ErrorMessage = "El nombre del color debe contener al menos 2 caracteres.")]
     public string Descripcion { get; set; } = string.Empty;
-    [Required(ErrorMessage = "El código HEX (R, G, B, Alpha) del color es obligatorio.")]
     [RegularExpression(@"^([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$", ErrorMessage = "El código HEX del color debe poseer entre 6 y 8 caracteres alfanuméricos.")]
-    public string CodigoHex { get; set; } = string.Empty;
-    public ICollection<Dispositivo> Dispositivos { get; set; } = [];
+    public string? CodigoHex { get; set; }
 }
