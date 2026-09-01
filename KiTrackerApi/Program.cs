@@ -7,6 +7,7 @@ using KiTrackerApi.Data.Repository;
 using KiTrackerApi.Data.Seed;
 using KiTrackerApi.Core.Features.Especies;
 using KiTrackerApi.Core.Features.Especies.DTOs;
+using KiTrackerApi.Core.Features.Colores;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,8 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Registro los servicios específicos de mis modelos.
 builder.Services.AddScoped<IEspecieService, EspecieService>();
+builder.Services.AddScoped<IColorService, ColorService>();
+
 
 
 var app = builder.Build();

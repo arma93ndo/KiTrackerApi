@@ -17,6 +17,7 @@ public class Lectura
     public long NivelKi { get; set; } // El número calculado de unidades de energía. Se usa long porque los valores
     // crecen exponencialmente.
     [Required(ErrorMessage = "Una ruta de la fotografía procesada es obligatoria.")]
+    [RegularExpression(@"^(?i)[\w\-. /]+\.(jpg|jpeg|png|webp|svg)$", ErrorMessage = "Debes ingresar una ruta de imagen válida.")]
     [StringLength(512, ErrorMessage = "La ruta de la foto no puede exceder los 512 caracteres.")]
     public string RutaFotografia { get; set; } = string.Empty; // Ruta en el servidor del archivo de la foto procesada/almacenada.
     public DateTime FechaLectura { get; set; } = DateTime.UtcNow; // Timestamp en UTC de cuándo se tomó la lectura.
