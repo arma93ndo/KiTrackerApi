@@ -23,7 +23,9 @@ public class EspecieService : IEspecieService
         // 1. Obtener una entidad (modelo) rastreada por EF Core mediante el repositorio genérico.
         var especie = await _uow.Especies.GetByIdAsync(id);
 
-        if(especie is null) return false;
+        if(especie is null)
+            // Actualización imposible.
+            throw new KeyNotFoundException($"La especie con Id '{id}' no existe en la BBDD. Actualización imposible.");
 
         // 2. Modifico las propiedades directamente en la entidad almacenada en memoria para que EF Core las detecte.
         if(!string.IsNullOrWhiteSpace(dto.Descripcion))
@@ -38,15 +40,13 @@ public class EspecieService : IEspecieService
 
         // 3. El método .SaveChangesAsync() detecta los cambios del Change Tracker y genera la consulta UPDATE de SQL.
         await _uow.SaveChangesAsync();
-
-        return true;
     }
 
-    public async Task<bool> ActualizarEspecieByNombreAsync(string nombre, ActualizarEspecieDto dto)
+    public async Task ActualizarEspecieByNombreAsync(string nombre, ActualizarEspecieDto dto)
     {
         if(string.IsNullOrWhiteSpace(nombre))
             // Imposible hacer la actualización.
-            return false;
+            throw new ArgumentException($"El nombre proporcionado '{nombre}' es inválido. Actualización imposible.");
 
         // 1. Limpio la cadena recibida para la búsqueda.
         string limpio = nombre.SanitizarNombrePropio();
@@ -57,7 +57,8 @@ public class EspecieService : IEspecieService
         var especie = (especies ?? Enumerable.Empty<Especie>())
             .FirstOrDefault(e => string.Equals(e.Descripcion.SanitizarNombrePropio(), limpio, StringComparison.OrdinalIgnoreCase));
 
-        if(especie is null) return false;
+        if(especie is null)
+            throw new KeyNotFoundException($"La especie proporcionada no se encuentra en la BBDD.");
 
         // 3. Modifico las propiedades solicitadas directamente en la entidad almacenada en memoria para que EF Core detecte los cambios.
         if(!string.IsNullOrWhiteSpace(dto.Descripcion))
@@ -72,8 +73,6 @@ public class EspecieService : IEspecieService
 
         // 4. El método .SaveChangesAsync() detecta los cambios en el Change Tracker y genera la consulta UPDATE de SQL.
         await _uow.SaveChangesAsync();
-
-        return true;
     }
 
     public async Task<EspecieRespuestaDto> CrearEspecieAsync(CrearEspecieDto dto)
@@ -101,26 +100,27 @@ public class EspecieService : IEspecieService
         return respuesta;
     }
 
-    public async Task<bool> EliminarEspecieByIdAsync(int id)
+    public async Task EliminarEspecieByIdAsync(int id)
     {
         // 1. Obtengo la entidad (modelo) que el usuario desea eliminar.
         var especie = await _uow.Especies.GetByIdAsync(id);
 
-        if(especie is null) return false;
+        if(especie is null)
+            // Imposible hacer la eliminación.
+            throw new KeyNotFoundException($"La especie con el id '{id}' especificado no se encuentra en la BBDD. Eliminación imposible.");
 
         // 2. Elimino la especie particular utilizando la UoW para que el Change Tracker lo detecte.
         _uow.Especies.Remove(especie);
 
         // 3. Almaceno los cambios realizados a la BBDD.
         await _uow.SaveChangesAsync();
-
-        return true;
     }
 
-    public async Task<bool> EliminarEspecieByNombreAsync(string nombre)
+    public async Task EliminarEspecieByNombreAsync(string nombre)
     {
         // 1. Garantizo que el usuario haya enviado alguna información.
-        if(string.IsNullOrWhiteSpace(nombre)) return false;
+        if(string.IsNullOrWhiteSpace(nombre))
+            throw new ArgumentException($"El nombre proporcionado '{nombre}' es inválido. Eliminación imposible.");
 
         // 2. Limpio la cadena recibida para la búsqueda.
         string limpio = nombre.SanitizarNombrePropio();
@@ -132,14 +132,12 @@ public class EspecieService : IEspecieService
 
         if(especie is null)
             // Especie no encontrada.
-            return false;
+            throw new KeyNotFoundException($"La especie proporcionada no se encuentra en la BBDD.");
 
         // 4. Elimino la instancia obtenido usando la Unit of Work.
         _uow.Especies.Remove(especie);
         // 5. Almaceno los cambios realizados a la BBDD.
         await _uow.SaveChangesAsync();
-
-        return true;
     }
 
     public async Task<IEnumerable<EspecieRespuestaDto>> ObtenerTodasAsync()

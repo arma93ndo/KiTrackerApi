@@ -15,15 +15,15 @@ public class LuchadorService : ILuchadorService
         _uow = unitOfWork;
     }
 
-    public async Task<bool> ActualizarLuchadorByIdAsync(int id, ActualizarLuchadorDto dto)
+    public async Task ActualizarByIdAsync(int id, ActualizarLuchadorDto dto)
     {
         // 1. Obtengo la instancia específica (registro) de la BBDD que el usuario desea modificar.
         var luchador = await _uow.Luchadores.GetByIdAsync(id);
 
         if(luchador is null)
             // Imposible hacer la actualización.
-            return false;
-        
+            throw new KeyNotFoundException($"El luchador con Id '{id}' no existe en la BBDD. Actualización imposible.");
+
         // 2. Modifico la instancia obtenida directamente para que el Change Tracker la detecte.
         if(!string.IsNullOrEmpty(dto.Nombre))
         {
@@ -36,7 +36,7 @@ public class LuchadorService : ILuchadorService
 
             if(especieExistente is null)
                 // El usuario intentó usar una especie inexistente en la BBDD.
-                return false;
+                throw new KeyNotFoundException($"La especie con el id '{dto.EspecieId.Value}' no existe en la BBDD.");
             
             luchador.EspecieId = dto.EspecieId.Value;
         }
@@ -48,16 +48,14 @@ public class LuchadorService : ILuchadorService
 
         // 3. Almaceno los cambios detectados por el Change Tracker en la BBDD.
         await _uow.SaveChangesAsync();
-
-        return true;
     }
 
-    public async Task<bool> ActualizarLuchadorByNombreAsync(string nombre, ActualizarLuchadorDto dto)
+    public async Task ActualizarByNombreAsync(string nombre, ActualizarLuchadorDto dto)
     {
         // 1. Me aseguro de que el usuario haya mandado un nombre qué buscar.
         if(string.IsNullOrWhiteSpace(nombre))
             // Imposible realizar la actualización.
-            return false;
+            throw new ArgumentException($"El nombre proporcionado es inválido. Actualización imposible.");
 
         // 2. Limpio la cadena recibida para la búsqueda.
         var limpio = nombre.SanitizarNombrePropio();
@@ -65,7 +63,8 @@ public class LuchadorService : ILuchadorService
         // 3. Obtengo la instancia de Luchador específica de la BBDD.
         var luchador = await _uow.Luchadores.GetByNombreAsync(limpio);
 
-        if(luchador is null) return false;
+        if(luchador is null)
+            throw new KeyNotFoundException($"El luchador con el Id especificado no existe en la BBDD.");
 
         // 4. Actualizo las propiedades solicitadas en la entidad hallada para que sea detectada por el Change Tracker.
         if(!string.IsNullOrWhiteSpace(dto.Nombre))
@@ -79,19 +78,17 @@ public class LuchadorService : ILuchadorService
 
             if(especieExistente is null)
                 // El usuario intentó usar una especie inexistente en la BBDD.
-                return false;
+                throw new KeyNotFoundException($"La especie con el Id especificado no existe en la BBDD.");
             luchador.EspecieId = dto.EspecieId.Value;
         }
 
         if(!string.IsNullOrWhiteSpace(dto.FotoPerfilUrl))
         {
             luchador.FotoPerfilUrl = dto.FotoPerfilUrl.Trim();
-        }
+        }  
 
         // 5. Almaceno los cambios detectados por el Change Tracker en la BBDD.
         await _uow.SaveChangesAsync();
-
-        return true;
     }
 
     public async Task<LuchadorRespuestaDto> CrearLuchadorAsync(CrearLuchadorDto dto)
@@ -101,7 +98,7 @@ public class LuchadorService : ILuchadorService
         if(especieExistente is null)
         {
             // TODO: Corregir esta excepción con el nuevo formato Problem Details.
-            throw new InvalidOperationException($"La especie con Id {dto.EspecieId} no existe en la BBDD. Creación del Luchador imposible.");
+            throw new KeyNotFoundException($"La especie con Id {dto.EspecieId} no existe en la BBDD. Creación del Luchador imposible.");
         }
 
         // 2. Comienzo a poblar al nuevo luchador que se creará en la BBDD.
@@ -128,29 +125,27 @@ public class LuchadorService : ILuchadorService
         return respuesta;
     }
 
-    public async Task<bool> EliminarLuchadorByIdAsync(int id)
+    public async Task EliminarByIdAsync(int id)
     {
         // 1. Obtengo la instancia específica de la BBDD que el usuario desea eliminar.
         var luchador = await _uow.Luchadores.GetByIdAsync(id);
 
         if(luchador is null)
-            return false;
+            throw new KeyNotFoundException($"El luchador con el Id '{id}' no existe en la BBDD. Eliminación imposible.");
 
         // 2. Realizo la operación de borrado que será detectada por el Change Tracker.
         _uow.Luchadores.Remove(luchador);
 
         // 3. Almaceno los cambios realizados en la BBDD.
         await _uow.SaveChangesAsync();
-
-        return true;
     }
 
-    public async Task<bool> EliminarLuchadorByNombreAsync(string nombre)
+    public async Task EliminarByNombreAsync(string nombre)
     {
         // 1. Me aseguro de haber recibido un nombre por parte del usuario.
         if(string.IsNullOrWhiteSpace(nombre))
             // Imposible realizar la eliminación.
-            return false;
+            throw new ArgumentException($"El nombre proporcionado es inválido. Eliminación imposible.");
 
         // 2. Limpio la cadena recibida para la búsqueda.
         var limpio = nombre.SanitizarNombrePropio();
@@ -158,15 +153,14 @@ public class LuchadorService : ILuchadorService
         // 3. Obtengo la instancia específica por parte de la BBDD.
         var luchador = await _uow.Luchadores.GetByNombreAsync(limpio);
 
-        if(luchador is null) return false;
+        if(luchador is null)
+            throw new KeyNotFoundException($"El luchador proporcionado no existe en la BBDD.");
 
         // 4. Realizo la operación de borrado para que sea detectada por el Change Tracker.
         _uow.Luchadores.Remove(luchador);
 
         // 5. Guardo los cambios realizados en la BBDD.
         await _uow.SaveChangesAsync();
-
-        return true;
     }
 
     public async Task<IEnumerable<LuchadorRespuestaDto>> ObtenerByEspecieIdAsync(int especieId)
@@ -182,7 +176,7 @@ public class LuchadorService : ILuchadorService
         var luchadores = await _uow.Luchadores.GetByEspecieIdAsync(especieId);
 
         // 3. Mapeo los luchadores obtenidos al formato esperado por el cliente (LuchadorRespuestaDto)
-        return luchadores.Select(l => new LuchadorRespuestaDto
+        return (luchadores ?? Enumerable.Empty<Luchador>()).Select(l => new LuchadorRespuestaDto
         {
             Id = l.Id,
             Nombre = l.Nombre,

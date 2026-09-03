@@ -8,9 +8,9 @@ public interface ILuchadorService
     Task<LuchadorRespuestaDto?> ObtenerByIdAsync(int id);
     Task<LuchadorRespuestaDto?> ObtenerByNombreAsync(string nombre);
     Task<LuchadorRespuestaDto> CrearLuchadorAsync(CrearLuchadorDto dto);
-    Task<bool> ActualizarLuchadorByIdAsync(int id, ActualizarLuchadorDto dto);
-    Task<bool> ActualizarLuchadorByNombreAsync(string nombre, ActualizarLuchadorDto dto);
-    Task<bool> EliminarLuchadorByIdAsync(int id);
-    Task<bool> EliminarLuchadorByNombreAsync(string nombre);
+    Task ActualizarByIdAsync(int id, ActualizarLuchadorDto dto);
+    Task ActualizarByNombreAsync(string nombre, ActualizarLuchadorDto dto);
+    Task EliminarByIdAsync(int id);
+    Task EliminarByNombreAsync(string nombre);
     Task<IEnumerable<LuchadorRespuestaDto>> ObtenerByEspecieIdAsync(int especieId);
 }

@@ -15,14 +15,14 @@ public class ColorService : IColorService
         _uow = unitOfWork;
     }
 
-    public async Task<bool> ActualizarColorByIdAsync(int id, ActualizarColorDto dto)
+    public async Task ActualizarColorByIdAsync(int id, ActualizarColorDto dto)
     {
         // 1. Obtengo la instancia específica por medio del repositorio genérico.
         var color = await _uow.Colores.GetByIdAsync(id);
 
         if(color is null)
             // Imposible realizar la actualización.
-            return false;
+            throw new KeyNotFoundException($"El color con el id '{id}' especificado no se encuentra en la BBDD. Actualización imposible.");;
 
         // 2. Modifico las propiedades directamente en la entidad almacenada en memroai para que EF Core detecte los cambios.
         if(!string.IsNullOrWhiteSpace(dto.Descripcion))
@@ -37,15 +37,13 @@ public class ColorService : IColorService
 
         // 3. Almaceno los cambios del Change Tracker y genera la consulta UPDATE de SQL.
         await _uow.SaveChangesAsync();
-
-        return true;
     }
 
-    public async Task<bool> ActualizarColorByNombreAsync(string nombre, ActualizarColorDto dto)
+    public async Task ActualizarColorByNombreAsync(string nombre, ActualizarColorDto dto)
     {
         if(string.IsNullOrWhiteSpace(nombre))
             // Imposible hacer la actualización.
-            return false;
+        throw new ArgumentException($"El nombre proporcionado es inválido. Actualización imposible.");
 
         // 1. Sanitizo la cadena del nombre antes de usarla para buscar.
         var limpio = nombre.SanitizarNombrePropio();
@@ -55,7 +53,8 @@ public class ColorService : IColorService
         var color = (colores ?? Enumerable.Empty<Color>())
             .FirstOrDefault(c => string.Equals(c.Descripcion.SanitizarNombrePropio(), limpio, StringComparison.OrdinalIgnoreCase));
 
-        if(color is null) return false;
+        if(color is null)
+            throw new KeyNotFoundException($"El color especificado no existe en la BBDD.");
 
         // 3. Modifico las propiedades solicitadas directamente en la entidad almacenada en memoria para que EF Core detecte los cambios.
         if(!string.IsNullOrWhiteSpace(dto.Descripcion))
@@ -70,8 +69,6 @@ public class ColorService : IColorService
 
         // 4. Almaceno los cambios detectados por el Change Tracker con el método .SaveChangesAsync().
         await _uow.SaveChangesAsync();
-
-        return true;
     }
 
     public async Task<ColorRespuestaDto> CrearColorAsync(CrearColorDto dto)
@@ -105,28 +102,28 @@ public class ColorService : IColorService
         return respuesta;
     }
 
-    public async Task<bool> EliminarColorByIdAsync(int id)
+    public async Task EliminarColorByIdAsync(int id)
     {
         // 1. Obtengo la entidad (modelo) que el usuario desea eliminar.
         var color = await _uow.Colores.GetByIdAsync(id);
 
-        if(color is null) return false;
+        if(color is null)
+            // Eliminación imposible.
+            throw new KeyNotFoundException($"El color con el Id {id} no existe en la BBDD. Eliminación imposible.");
 
         // 2. Elimino el color particular usando la UoW para que el Change Tracker lo detecte.
         _uow.Colores.Remove(color);
 
         // 3. Almaceno los cambios realizados a la base de datos.
         await _uow.SaveChangesAsync();
-
-        return true;
     }
 
-    public async Task<bool> EliminarColorByNombreAsync(string nombre)
+    public async Task EliminarColorByNombreAsync(string nombre)
     {
         // 1. Me cercioro que el usuario haya mandado un nombre válido para la búsqueda.
         if(string.IsNullOrWhiteSpace(nombre))
             // Imposible realizar la eliminación.
-            return false;
+            throw new ArgumentException($"El nombre proporcionado es inválido. Eliminación imposible.");
 
         // 2. Limpio la cadena recibia para la búsqueda.
         var limpio = nombre.SanitizarNombrePropio();
@@ -136,15 +133,14 @@ public class ColorService : IColorService
         var color = (colores ?? Enumerable.Empty<Color>())
             .FirstOrDefault(c => string.Equals(c.Descripcion.SanitizarNombrePropio(), limpio, StringComparison.OrdinalIgnoreCase));
 
-        if(color is null) return false;
+        if(color is null)
+            throw new KeyNotFoundException($"El nombre especificado no existe en la BBDD.");
 
         // 4. Ejecuto la operación de eliminar para que el Change Tracker la detecte.
         _uow.Colores.Remove(color);
 
         // 5. Almaceno los cambios detectados por EF Core.
         await _uow.SaveChangesAsync();
-
-        return true;
     }
 
     public async Task<IEnumerable<ColorRespuestaDto>> ObtenerTodosAsync()

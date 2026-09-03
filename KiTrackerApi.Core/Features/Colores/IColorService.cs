@@ -7,8 +7,8 @@ public interface IColorService
 {
     Task<ColorRespuestaDto> CrearColorAsync(CrearColorDto dto);
     Task<IEnumerable<ColorRespuestaDto>> ObtenerTodosAsync();
-    Task<bool> ActualizarColorByIdAsync(int id, ActualizarColorDto dto);
-    Task<bool> ActualizarColorByNombreAsync (string nombre, ActualizarColorDto dto);
-    Task<bool> EliminarColorByIdAsync (int id);
-    Task<bool> EliminarColorByNombreAsync (string nombre);
+    Task ActualizarColorByIdAsync(int id, ActualizarColorDto dto);
+    Task ActualizarColorByNombreAsync (string nombre, ActualizarColorDto dto);
+    Task EliminarColorByIdAsync (int id);
+    Task EliminarColorByNombreAsync (string nombre);
 }
