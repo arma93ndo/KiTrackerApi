@@ -8,7 +8,7 @@ public class Dispositivo
     [Key]
     public int Id { get; set; }
     [Required(ErrorMessage = "El fingerprint del dispositivo es obligatorio.")]
-    [StringLength(255, MinimumLength = 2, ErrorMessage = "El fingerprint del dispositivo contener por lo menos 2 caracteres.")]
+    [StringLength(255, MinimumLength = 2, ErrorMessage = "El fingerprint del dispositivo debe contener por lo menos 2 caracteres.")]
     public string Fingerprint { get; set; } = string.Empty;
     [Required(ErrorMessage = "El tipo de dispositivo es obligatorio.")]
     public string Tipo { get; set; } = string.Empty; // p. ej. "Mobile", "WebBrowser", etc.

@@ -4,7 +4,7 @@ using KiTrackerApi.Core.Features.Lecturas.DTOs;
 using KiTrackerApi.Core.Interfaces;
 using KiTrackerApi.Core.Models;
 
-namespace KiTRacker.Core.Features.Lecturas;
+namespace KiTrackerApi.Core.Features.Lecturas;
 
 public class LecturaService : ILecturaService
 {
@@ -30,26 +30,30 @@ public class LecturaService : ILecturaService
             throw new ArgumentException($"El fingerprint de dispositivo enviado no es válido. Creación del Lectura imposible.");
 
         var fingerprintLimpio = dto.FingerprintDispositivo.Trim();
-        var dispositivoExistente = await _uow.Dispositivos.GetByFingerprintAsync(fingerprintLimpio);
+        var dispositivoExistente = await _uow.Dispositivos.GetByFingerprintConDetallesAsync(fingerprintLimpio);
         if(dispositivoExistente is null)
             // TODO: Corregir esta excepción con el nuevo formato Problem Details.
             throw new KeyNotFoundException($"El dispositivo con el Id {dto.FingerprintDispositivo} no existe en la BBDD. Creación de Lectura imposible.");
         
-        // 2. Comienzo a poblar las propiedades de la nueva instancia de Lectura.
+        // 2. Como el dispositivo obtenido está creando la nueva lectura, actualizo su fecha de uso para que el Change Tracker lo detecte.
+        var horaActual = DateTime.UtcNow;
+        dispositivoExistente.FechaUltimoUso = horaActual;
+
+        // 3. Comienzo a poblar las propiedades de la nueva instancia de Lectura.
         var nuevaLectura = new Lectura
         {
             LuchadorId = dto.LuchadorId,
             DispositivoId = dispositivoExistente.Id,
             NivelKi = dto.NivelKi,
             RutaFotografia = string.IsNullOrWhiteSpace(dto.RutaFotografia) ? null : dto.RutaFotografia.Trim(),
-            FechaLectura = DateTime.UtcNow
+            FechaLectura = horaActual
         };
 
-        // 3. Almaceno la nueva instancia de Lectura en la BBDD vía la UoW.
+        // 4. Almaceno la nueva instancia de Lectura en la BBDD vía la UoW.
         await _uow.Lecturas.AddAsync(nuevaLectura);
         await _uow.SaveChangesAsync();
 
-        // 4. Comienzo a poblar la instancia de "LecturaRespuestaDto" que le enviaré de vuelta al cliente.
+        // 5. Comienzo a poblar la instancia de "LecturaRespuestaDto" que le enviaré de vuelta al cliente.
         var respuesta = new LecturaRespuestaDto
         {
             Id = nuevaLectura.Id,

@@ -18,7 +18,7 @@ public class EspecieService : IEspecieService
         _uow = unitOfWork;
     }
 
-    public async Task<bool> ActualizarEspecieByIdAsync(int id, ActualizarEspecieDto dto)
+    public async Task ActualizarEspecieByIdAsync(int id, ActualizarEspecieDto dto)
     {
         // 1. Obtener una entidad (modelo) rastreada por EF Core mediante el repositorio genérico.
         var especie = await _uow.Especies.GetByIdAsync(id);

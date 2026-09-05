@@ -1,6 +1,6 @@
 using KiTrackerApi.Core.Features.Lecturas.DTOs;
 
-namespace KiTRacker.Core.Features.Lecturas;
+namespace KiTrackerApi.Core.Features.Lecturas;
 
 public interface ILecturaService
 {
