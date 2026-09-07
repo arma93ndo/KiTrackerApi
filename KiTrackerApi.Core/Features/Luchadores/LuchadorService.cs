@@ -25,7 +25,7 @@ public class LuchadorService : ILuchadorService
             throw new KeyNotFoundException($"El luchador con Id '{id}' no existe en la BBDD. Actualización imposible.");
 
         // 2. Modifico la instancia obtenida directamente para que el Change Tracker la detecte.
-        if(!string.IsNullOrEmpty(dto.Nombre))
+        if(!string.IsNullOrWhiteSpace(dto.Nombre))
         {
             luchador.Nombre = dto.Nombre.SanitizarNombrePropio();
         }
@@ -97,7 +97,6 @@ public class LuchadorService : ILuchadorService
         var especieExistente = await _uow.Especies.GetByIdAsync(dto.EspecieId);
         if(especieExistente is null)
         {
-            // TODO: Corregir esta excepción con el nuevo formato Problem Details.
             throw new KeyNotFoundException($"La especie con Id {dto.EspecieId} no existe en la BBDD. Creación del Luchador imposible.");
         }
 
@@ -119,7 +118,8 @@ public class LuchadorService : ILuchadorService
         {
             Id = nuevoLuchador.Id,
             Nombre = nuevoLuchador.Nombre,
-            EspecieId = nuevoLuchador.EspecieId
+            EspecieId = nuevoLuchador.EspecieId,
+            NombreEspecie = nuevoLuchador.Especie?.Descripcion ?? string.Empty
         };
 
         return respuesta;
@@ -169,7 +169,6 @@ public class LuchadorService : ILuchadorService
         var especieExistente = await _uow.Especies.GetByIdAsync(especieId);
 
         if(especieExistente is null)
-            // TODO: Corregir esta excepción con el nuevo formato Problem Details.
             throw new KeyNotFoundException($"La especie con Id {especieId} no existe en la BBDD.");
         
         // 2. Obtengo las instancias de "Luchador" que coincidan con el filtro.
@@ -180,7 +179,8 @@ public class LuchadorService : ILuchadorService
         {
             Id = l.Id,
             Nombre = l.Nombre,
-            EspecieId = l.EspecieId
+            EspecieId = l.EspecieId,
+            NombreEspecie = l.Especie?.Descripcion ?? string.Empty
         });
     }
 
@@ -198,7 +198,8 @@ public class LuchadorService : ILuchadorService
         {
             Id = luchador.Id,
             Nombre = luchador.Nombre,
-            EspecieId = luchador.EspecieId
+            EspecieId = luchador.EspecieId,
+            NombreEspecie = luchador.Especie?.Descripcion ?? string.Empty
         };
     }
 
@@ -221,7 +222,8 @@ public class LuchadorService : ILuchadorService
         {
             Id = luchador.Id,
             Nombre = luchador.Nombre,
-            EspecieId = luchador.EspecieId
+            EspecieId = luchador.EspecieId,
+            NombreEspecie = luchador.Especie?.Descripcion ?? string.Empty
         };
     }
 
@@ -233,7 +235,8 @@ public class LuchadorService : ILuchadorService
         {
             Id = l.Id,
             Nombre = l.Nombre,
-            EspecieId = l.EspecieId
+            EspecieId = l.EspecieId,
+            NombreEspecie = l.Especie?.Descripcion ?? string.Empty
         });
     }
 }

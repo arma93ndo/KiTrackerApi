@@ -8,6 +8,11 @@ using KiTrackerApi.Data.Seed;
 using KiTrackerApi.Core.Features.Especies;
 using KiTrackerApi.Core.Features.Especies.DTOs;
 using KiTrackerApi.Core.Features.Colores;
+using KiTrackerApi.Errors;
+using KiTrackerApi.Core.Features.Luchadores;
+using KiTrackerApi.Core.Features.Dispositivos;
+using KiTrackerApi.Core.Features.Lecturas;
+using KiTrackerApi.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,8 +30,28 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 // Registro los servicios específicos de mis modelos.
 builder.Services.AddScoped<IEspecieService, EspecieService>();
 builder.Services.AddScoped<IColorService, ColorService>();
+builder.Services.AddScoped<ILuchadorService, LuchadorService>();
+builder.Services.AddScoped<IDispositivoService, DispositivoService>();
+builder.Services.AddScoped<ILecturaService, LecturaService>();
 
+// Registro el IProblemDetailsService. Todas las respuestas de error se formatearán según el
+// formato estándar RFC 9457. Un JSON que contiene (por lo menos), las propiedades:
+// - type
+// - title
+// - status
+// - detail
+// Agregaremos el TraceId. Este identificador aparecerá en los logs del servidor. El cliente
+// podrá reportarnos este TraceId y nosotros podremos rastrear su petición exacta.
+builder.Services.AddProblemDetails(options =>
+    options.CustomizeProblemDetails = context => // CustomizeProblemDetails enriquece todas
+    // las respuestas de error, de golpe. Como por arte de magia.
+    {
+        context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+    }
+);
 
+// Registro mi middleware del manejador de errores global.
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 var app = builder.Build();
 
@@ -228,7 +253,18 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
+// El orden importa: el manejo de excepciones debe ir al principio del pipeline, para así envolver
+// todo lo que ocurra después. .UseExceptionHandler() debe ir antes de .UseStatusCodePages().
+#region ESPACIO RESERVADO PARA EL GLOBALEXCEPTIONHANDLER
+// El Global Exception Handler (middleware) deberá ser el primero dentro del pipeline, para envolver
+// todo lo que ocurra después.
+app.UseExceptionHandler();
+#endregion
+app.UseStatusCodePages(); // Con esta línea, los códigos de error llegan al cliente rellenados
+// con la información del estándar Problem Details. De lo contrario, llegarían al cliente como
+// códigos de error completamente "pelones" (sin un body).
 
+app.MapLuchadoresEndpoints();
 app.MapGet("/", () => "Hello World!");
 
 app.Run();
