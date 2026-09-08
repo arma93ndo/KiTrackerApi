@@ -105,7 +105,7 @@ public class DispositivoService : IDispositivoService
         return respuesta;
     }
 
-    public async Task EliminarById(int id)
+    public async Task EliminarByIdAsync(int id)
     {
         // 1. Obtengo la instancia de dispositivo específica desde la BBDD.
         var dispositivo = await _uow.Dispositivos.GetByIdAsync(id);

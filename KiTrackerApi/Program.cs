@@ -265,6 +265,7 @@ app.UseStatusCodePages(); // Con esta línea, los códigos de error llegan al cl
 // códigos de error completamente "pelones" (sin un body).
 
 app.MapLuchadoresEndpoints();
+app.MapDispositivosEndpoints();
 app.MapGet("/", () => "Hello World!");
 
 app.Run();

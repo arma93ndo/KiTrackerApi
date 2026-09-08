@@ -7,7 +7,7 @@ public interface IDispositivoService
     // Métodos para mutaciones (creación, actualización).
     Task<DispositivoRespuestaDto> CrearDispositivoAsync(CrearDispositivoDto dto);
     Task<DispositivoRespuestaDto> ActualizarByIdAsync(int id, ActualizarDispositivoDto dto);
-    Task EliminarById(int id);
+    Task EliminarByIdAsync(int id);
     // Métodos de consulta.
     Task<DispositivoRespuestaDto> ObtenerByIdAsync(int id);
     Task<DispositivoRespuestaDto> ObtenerByFingerprintAsync(string fingerprint);
