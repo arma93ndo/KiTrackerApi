@@ -1,8 +1,8 @@
-using System.Data.Common;
 using KiTrackerApi.Core.Extensions;
 using KiTrackerApi.Core.Features.Lecturas.DTOs;
 using KiTrackerApi.Core.Interfaces;
 using KiTrackerApi.Core.Models;
+using KiTrackerApi.Core.Constants;
 
 namespace KiTrackerApi.Core.Features.Lecturas;
 
@@ -116,7 +116,7 @@ public class LecturaService : ILecturaService
 
         if(lectura is null)
             // Lectura inexistente.
-            return null;
+            throw new KeyNotFoundException($"La lectura con el Id '{id}' no existe en la BBDD.");
 
         // 2. Pueblo el objeto "LecturaRespuestaDto" que devolveré al cliente.
         var respuesta = new LecturaRespuestaDto
@@ -216,11 +216,9 @@ public class LecturaService : ILecturaService
 
     public async Task<IEnumerable<LecturaRespuestaDto>> ObtenerMaximosKisAsync(int top)
     {
-        const int limiteMaximoTop = 250;
-
         // 1. Validaciones básicas a los parámetros de entrada.
-        if(top <= 0 || top > limiteMaximoTop)
-            throw new ArgumentOutOfRangeException(nameof(top), $"El valor de top proporcionado debe estar entre 1 y {limiteMaximoTop}.");
+        if(top <= 0 || top > ReglasLectura.LIMITE_MAXIMO_TOP)
+            throw new ArgumentOutOfRangeException(nameof(top), $"El valor de top proporcionado debe estar entre 1 y {ReglasLectura.LIMITE_MAXIMO_TOP}.");
         
         // 2. Obtengo las "top" instancias de mayor ki de la tabla Lecturas.
         var lecturasTop = await _uow.Lecturas.GetTopKiLecturasAsync(top);
