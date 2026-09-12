@@ -264,8 +264,12 @@ app.UseStatusCodePages(); // Con esta línea, los códigos de error llegan al cl
 // con la información del estándar Problem Details. De lo contrario, llegarían al cliente como
 // códigos de error completamente "pelones" (sin un body).
 
+// Expongo todos los endpoints necesarios en mi aplicación.
 app.MapLuchadoresEndpoints();
 app.MapDispositivosEndpoints();
+app.MapDispositivosEndpoints();
+app.MapColoresEndpoints();
+app.MapEspeciesEndpoints();
 app.MapGet("/", () => "Hello World!");
 
 app.Run();
