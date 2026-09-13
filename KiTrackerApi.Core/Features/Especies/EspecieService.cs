@@ -3,6 +3,7 @@ using KiTrackerApi.Core.Features.Especies.DTOs;
 using KiTrackerApi.Core.Interfaces;
 using KiTrackerApi.Core.Models;
 using KiTrackerApi.Core.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace KiTrackerApi.Core.Features.Especies;
 
@@ -12,10 +13,12 @@ public class EspecieService : IEspecieService
 
     // Variables de instancia.
     private readonly IUnitOfWork _uow;
+    private readonly ILogger<EspecieService> _logger;
 
-    public EspecieService(IUnitOfWork unitOfWork)
+    public EspecieService(IUnitOfWork unitOfWork, ILogger<EspecieService> logger)
     {
         _uow = unitOfWork;
+        _logger = logger;
     }
 
     public async Task ActualizarEspecieByIdAsync(int id, ActualizarEspecieDto dto)
@@ -40,6 +43,7 @@ public class EspecieService : IEspecieService
 
         // 3. El método .SaveChangesAsync() detecta los cambios del Change Tracker y genera la consulta UPDATE de SQL.
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("La Especie con Id {especieId} se actualizó correctamente.", especie.Id);
     }
 
     public async Task ActualizarEspecieByNombreAsync(string nombre, ActualizarEspecieDto dto)
@@ -73,6 +77,7 @@ public class EspecieService : IEspecieService
 
         // 4. El método .SaveChangesAsync() detecta los cambios en el Change Tracker y genera la consulta UPDATE de SQL.
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("La Especie con Nombre {NombreEspecie} se actualizó correctamente.", especie.Descripcion);
     }
 
     public async Task<EspecieRespuestaDto> CrearEspecieAsync(CrearEspecieDto dto)
@@ -89,6 +94,7 @@ public class EspecieService : IEspecieService
         // Almaceno en la BBDD la nueva instancia de "Especie" mandada por el usuario.
         await _uow.Especies.AddAsync(nuevaEspecie);
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("La Especie con Id {especieId} se creó correctamente.", nuevaEspecie.Id);
 
         // Pueblo una nueva instancia de "EspecieRespuestaDto" que es el objeto que se devolverá al cliente.
         var respuesta = new EspecieRespuestaDto
@@ -114,6 +120,7 @@ public class EspecieService : IEspecieService
 
         // 3. Almaceno los cambios realizados a la BBDD.
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("La Especie con Id {especieId} se eliminó correctamente.", id);
     }
 
     public async Task EliminarEspecieByNombreAsync(string nombre)
@@ -138,6 +145,7 @@ public class EspecieService : IEspecieService
         _uow.Especies.Remove(especie);
         // 5. Almaceno los cambios realizados a la BBDD.
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("La Especie con nombre {NombreEspecie} se eliminó correctamente.", limpio);
     }
 
     public async Task<IEnumerable<EspecieRespuestaDto>> ObtenerTodasAsync()

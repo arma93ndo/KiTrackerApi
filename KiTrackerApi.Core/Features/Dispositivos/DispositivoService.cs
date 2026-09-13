@@ -2,16 +2,20 @@ using KiTrackerApi.Core.Models;
 using KiTrackerApi.Core.Features.Dispositivos.DTOs;
 using KiTrackerApi.Core.Interfaces;
 using KiTrackerApi.Core.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace KiTrackerApi.Core.Features.Dispositivos;
 
 public class DispositivoService : IDispositivoService
 {
     private readonly IUnitOfWork _uow;
+    private readonly ILogger<DispositivoService> _logger;
 
-    public DispositivoService(IUnitOfWork unitOfWork)
+    public DispositivoService(IUnitOfWork unitOfWork, ILogger<DispositivoService> logger)
     {
         _uow = unitOfWork;
+        _logger = logger;
+
     }
 
     public async Task<DispositivoRespuestaDto> ActualizarByIdAsync(int id, ActualizarDispositivoDto dto)
@@ -45,6 +49,7 @@ public class DispositivoService : IDispositivoService
 
         // 3. Alamaceno los datos realizados a la instancia en la BBDD.
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("El Dispositivo con Id {dispositivoId} se actualizó correctamente.", dispositivo.Id);
 
         // 4. Comienzo a mapear los datos actualizados en el formato esperado por el cliente (DispositivoRespuestaDto).
         var respuesta = new DispositivoRespuestaDto
@@ -90,6 +95,7 @@ public class DispositivoService : IDispositivoService
         // 4. Almaceno la instancia recién creada en la BBDD.
         await _uow.Dispositivos.AddAsync(nuevoDispositivo);
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("El Dispositivo con Id {dispositivoId} se creó correctamente.", nuevoDispositivo.Id);
 
         // 5. Pueblo la respuesta que enviaré al cliente (DispositivoRespuestaDto).
         var respuesta = new DispositivoRespuestaDto
@@ -118,6 +124,7 @@ public class DispositivoService : IDispositivoService
 
         // 3. Almaceno los cambios realizados.
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("El Dispositivo con Id {dispositivoId} se eliminó correctamente.", id);
     }
 
     public async Task<IEnumerable<DispositivoRespuestaDto>> ObtenerByColorIdAsync(int colorId)

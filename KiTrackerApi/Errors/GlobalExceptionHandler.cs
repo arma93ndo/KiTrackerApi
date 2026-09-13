@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace KiTrackerApi.Errors;
 
@@ -10,8 +11,8 @@ public class GlobalExceptionHandler(IProblemDetailsService problemDetailsService
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
         // Los detalles reales sobre la excepción serán registrados dentro del servidor en un .log. Jamás viajarán al cliente.
-        logger.LogError(exception, "Excepción no manejada al procesar {Metodo} {Ruta}. Mensaje: {Mensaje}", httpContext.Request.Method, // Logging estructurado.
-            httpContext.Request.Path, exception.Message);
+        logger.LogError(exception, "Excepción no manejada al procesar {Metodo} {Ruta}. Mensaje: {Mensaje}\nStack trace: {StackTrace}", httpContext.Request.Method, // Logging estructurado.
+            httpContext.Request.Path, exception.Message, exception.StackTrace);
 
         // Utilizo una expresión switch (pattern matching) para determinar qué tipo de excepción ocurrió.
         var (statusCode, title) = exception switch

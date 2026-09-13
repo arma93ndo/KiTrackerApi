@@ -3,16 +3,19 @@ using KiTrackerApi.Core.Features.Lecturas.DTOs;
 using KiTrackerApi.Core.Interfaces;
 using KiTrackerApi.Core.Models;
 using KiTrackerApi.Core.Constants;
+using Microsoft.Extensions.Logging;
 
 namespace KiTrackerApi.Core.Features.Lecturas;
 
 public class LecturaService : ILecturaService
 {
     private readonly IUnitOfWork _uow;
+    private readonly ILogger<LecturaService> _logger;
 
-    public LecturaService(IUnitOfWork unitOfWork)
+    public LecturaService(IUnitOfWork unitOfWork, ILogger<LecturaService> logger)
     {
         _uow = unitOfWork;
+        _logger = logger;
     }
 
     public async Task<LecturaRespuestaDto> CrearLecturaAsync(CrearLecturaDto dto)
@@ -52,6 +55,7 @@ public class LecturaService : ILecturaService
         // 4. Almaceno la nueva instancia de Lectura en la BBDD vía la UoW.
         await _uow.Lecturas.AddAsync(nuevaLectura);
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("La Lectura con Id {lecturaId} se creó correctamente.", nuevaLectura.Id);
 
         // 5. Comienzo a poblar la instancia de "LecturaRespuestaDto" que le enviaré de vuelta al cliente.
         var respuesta = new LecturaRespuestaDto
@@ -82,6 +86,7 @@ public class LecturaService : ILecturaService
 
         // 3. Almaceno los cambios realizados en la BBDD.
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("La Lectura con Id {lecturaId} se eliminó correctamente.", id);
     }
 
     public async Task<IEnumerable<LecturaRespuestaDto>> ObtenerByEspecieIdAsync(int especieId)

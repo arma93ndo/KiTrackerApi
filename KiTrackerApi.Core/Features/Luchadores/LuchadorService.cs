@@ -3,16 +3,19 @@ using KiTrackerApi.Core.Extensions;
 using KiTrackerApi.Core.Features.Luchadores.DTOs;
 using KiTrackerApi.Core.Interfaces;
 using KiTrackerApi.Core.Models;
+using Microsoft.Extensions.Logging;
 
 namespace KiTrackerApi.Core.Features.Luchadores;
 
 public class LuchadorService : ILuchadorService
 {
     private readonly IUnitOfWork _uow;
+    private readonly ILogger<LuchadorService> _logger;
 
-    public LuchadorService(IUnitOfWork unitOfWork)
+    public LuchadorService(IUnitOfWork unitOfWork, ILogger<LuchadorService> logger)
     {
         _uow = unitOfWork;
+        _logger = logger;
     }
 
     public async Task ActualizarByIdAsync(int id, ActualizarLuchadorDto dto)
@@ -48,6 +51,7 @@ public class LuchadorService : ILuchadorService
 
         // 3. Almaceno los cambios detectados por el Change Tracker en la BBDD.
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("El luchador con Id {LuchadorId} se actualizó correctamente.", luchador.Id);
     }
 
     public async Task ActualizarByNombreAsync(string nombre, ActualizarLuchadorDto dto)
@@ -89,6 +93,7 @@ public class LuchadorService : ILuchadorService
 
         // 5. Almaceno los cambios detectados por el Change Tracker en la BBDD.
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("El luchador con Nombre {NombreLuchador} se actualizó correctamente.", luchador.Nombre);
     }
 
     public async Task<LuchadorRespuestaDto> CrearLuchadorAsync(CrearLuchadorDto dto)
@@ -112,6 +117,7 @@ public class LuchadorService : ILuchadorService
         // 3. Almaceno en la BBDD la nueva instancia de "Luchador" con los datos mandados por el usuario.
         await _uow.Luchadores.AddAsync(nuevoLuchador);
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("El luchador con Id {LuchadorId} se creó correctamente.", nuevoLuchador.Id);
 
         // 4. Comienzo a poblar la instancia de "LuchadorRespuestaDto" que le enviaré de vuelta al cliente.
         var respuesta = new LuchadorRespuestaDto
@@ -138,6 +144,7 @@ public class LuchadorService : ILuchadorService
 
         // 3. Almaceno los cambios realizados en la BBDD.
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("El luchador con Id {LuchadorId} se eliminó correctamente.", id);
     }
 
     public async Task EliminarByNombreAsync(string nombre)
@@ -161,6 +168,7 @@ public class LuchadorService : ILuchadorService
 
         // 5. Guardo los cambios realizados en la BBDD.
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("El luchador con nombre {NombreLuchador} se eliminó correctamente.", limpio);
     }
 
     public async Task<IEnumerable<LuchadorRespuestaDto>> ObtenerByEspecieIdAsync(int especieId)

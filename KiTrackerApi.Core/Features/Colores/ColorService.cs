@@ -2,17 +2,19 @@ using KiTrackerApi.Core.Interfaces;
 using KiTrackerApi.Core.Models;
 using KiTrackerApi.Core.Features.Colores.DTOs;
 using KiTrackerApi.Core.Extensions;
-using System.Data.Common;
+using Microsoft.Extensions.Logging;
 
 namespace KiTrackerApi.Core.Features.Colores;
 
 public class ColorService : IColorService
 {
     private readonly IUnitOfWork _uow;
+    private readonly ILogger <ColorService> _logger;
 
-    public ColorService(IUnitOfWork unitOfWork)
+    public ColorService(IUnitOfWork unitOfWork, ILogger<ColorService> logger)
     {
         _uow = unitOfWork;
+        _logger = logger;
     }
 
     public async Task ActualizarColorByIdAsync(int id, ActualizarColorDto dto)
@@ -37,6 +39,7 @@ public class ColorService : IColorService
 
         // 3. Almaceno los cambios del Change Tracker y genera la consulta UPDATE de SQL.
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("El Color con Id {ColorId} se actualizó correctamente.", color.Id);
     }
 
     public async Task ActualizarColorByNombreAsync(string nombre, ActualizarColorDto dto)
@@ -69,6 +72,7 @@ public class ColorService : IColorService
 
         // 4. Almaceno los cambios detectados por el Change Tracker con el método .SaveChangesAsync().
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("El Color con nombre {NombreColor} se actualizó correctamente.", color.Descripcion);
     }
 
     public async Task<ColorRespuestaDto> CrearColorAsync(CrearColorDto dto)
@@ -90,6 +94,7 @@ public class ColorService : IColorService
         // 2. Alamaceno la nueva instancia en la BBDD.
         await _uow.Colores.AddAsync(nuevoColor);
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("El Color con Id {ColorId} se creó correctamente.", nuevoColor.Id);
 
         // 3. Preparo una instancia de "ColorRespuestaDto" para enviársela al cliente.
         var respuesta = new ColorRespuestaDto
@@ -116,6 +121,7 @@ public class ColorService : IColorService
 
         // 3. Almaceno los cambios realizados a la base de datos.
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("El Color con Id {ColorId} se eliminó correctamente.", id);
     }
 
     public async Task EliminarColorByNombreAsync(string nombre)
@@ -141,6 +147,7 @@ public class ColorService : IColorService
 
         // 5. Almaceno los cambios detectados por EF Core.
         await _uow.SaveChangesAsync();
+        _logger.LogInformation("El Color con nombre {NombreColor} se eliminó correctamente.", limpio);
     }
 
     public async Task<IEnumerable<ColorRespuestaDto>> ObtenerTodosAsync()
