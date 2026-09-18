@@ -4,6 +4,8 @@ using KiTrackerApi.Core.Interfaces;
 using KiTrackerApi.Core.Models;
 using KiTrackerApi.Core.Constants;
 using Microsoft.Extensions.Logging;
+using System.Reflection;
+
 
 namespace KiTrackerApi.Core.Features.Lecturas;
 
@@ -241,6 +243,59 @@ public class LecturaService : ILecturaService
         });
     }
 
+    public async Task<(IEnumerable<LecturaRespuestaDto>, int TotalRegistros)> FiltrarAsync(int pagina,
+                                                                                        int tamanioPagina,
+                                                                                        long? kiMinimo,
+                                                                                        long? kiMaximo,
+                                                                                        string? ordenarPor,
+                                                                                        bool descendente = false)
+    {
+        Console.WriteLine($"DEBUG FILTROS -> KiMinimo: {kiMinimo}, KiMaximo: {kiMaximo}"); // TODO: Eliminar esta línea.
+        // 1. Obtengo un IQueryable para poder preparar una consulta (Deferred execution).
+        IQueryable<Lectura> consulta = _uow.Lecturas.ObtenerQueryable();
+
+        // 2. Construyo sus filtros, ordenamientos y condiciones.
+        if(kiMinimo is not null)
+            consulta = consulta.Where(l => l.NivelKi >= kiMinimo);
+        
+        if(kiMaximo is not null)
+            consulta = consulta.Where(l => l.NivelKi <= kiMaximo);
+
+        // 3. Obtengo el total de registros filtrados en la BBDD. Después de filtrar pero antes de
+        // paginar (el total que le interesa al cliente es el de su búsqueda, no el general en la tabla).
+        int totalRegistros = await _uow.Lecturas.ContarConsultaAsync(consulta);
+
+        // 4. Aplico el ordenamiento sobre IQueryable (esto genera el SQL adecuado).
+        consulta = AplicarOrden(consulta, ordenarPor, descendente);
+
+        // 5. Proyección a un DTO en IQueryable (se realiza antes del .Skip()/.Take() para que EF Core mantenga
+        // el ORDER BY traducido a SQL. EF Core genera los JOINs requeridos).
+        var consultaDto = consulta.Select(l => new LecturaRespuestaDto
+        {
+            Id = l.Id,
+            LuchadorId = l.LuchadorId,
+            DispositivoId = l.DispositivoId,
+            NivelKi = l.NivelKi,
+            FechaLectura = l.FechaLectura,
+            // Al estar dentro del Select de un IQueryable, el operador ?. traduce a LEFT JOINT + COALESCE en SQL.
+            NombreLuchador = l.Luchador != null ? l.Luchador.Nombre : string.Empty,
+            NombreEspecie = l.Luchador != null && l.Luchador.Especie != null ? l.Luchador.Especie.Descripcion : null
+        });
+
+        // 6. Aplico una paginación directamente en la BBDD (que ni siquiera traiga los datos que
+        // no forman parte de la página especificada).
+        consultaDto = consultaDto.Skip((pagina - 1) * tamanioPagina)
+                                    .Take(tamanioPagina);
+
+        
+
+        // 7. Ejecuto de forma asíncrona en el servicio, delego la materialización de la consulta a mi repositorio
+        // con un método de extensión.
+        var lecturas = await _uow.Lecturas.MaterializarConsultaAsync(consultaDto);
+
+        return (lecturas, totalRegistros);
+    }
+
     public async Task<IEnumerable<LecturaRespuestaDto>> ObtenerTodasAsync()
     {
         var lecturas = await _uow.Lecturas.GetTodasConDetallesAsync();
@@ -255,5 +310,30 @@ public class LecturaService : ILecturaService
             NombreLuchador = l.Luchador?.Nombre ?? string.Empty,
             NombreEspecie = l.Luchador?.Especie?.Descripcion
         });
+    }
+
+    // Métodos de utilería.
+    static IOrderedQueryable<Lectura> AplicarOrden(IQueryable<Lectura> consulta, string? ordenarPor, bool descendente)
+    {
+        var campo = ordenarPor?.Trim().ToLowerInvariant();
+        IOrderedQueryable<Lectura> ordenada;
+
+        if(campo == "luchador")
+            ordenada = descendente 
+                ? consulta.OrderByDescending(l => l.Luchador != null ? l.Luchador.Nombre : string.Empty) 
+                : consulta.OrderBy(l => l.Luchador != null ? l.Luchador.Nombre : string.Empty);
+        else if(campo == "dispositivo")
+            ordenada = descendente ? consulta.OrderByDescending(l => l.DispositivoId) : consulta.OrderBy(l => l.DispositivoId);
+        else if(campo == "ki")
+            ordenada = descendente ? consulta.OrderByDescending(l => l.NivelKi) : consulta.OrderBy(l => l.NivelKi);
+        else if(campo == "fecha")
+            ordenada = descendente ? consulta.OrderByDescending(l => l.FechaLectura) : consulta.OrderBy(l => l.FechaLectura);
+        // Por defecto, se ordenarán el Id de la lectura. Como el Id único, no hay traslapes posibles qué resolver. Se devuelve al momento.
+        else return descendente ? consulta.OrderByDescending(l => l.Id) : consulta.OrderBy(l => l.Id);
+
+        // Hay traslapes en el orden qué resolver. Esto es especialmente importante si se piensa paginar el resultado.
+        // El método .ThenBy() anida un segundo criterio de ordenamiento sin sobrescribir el primero. El desempate por
+        // Id hace al orden de los resultados 100% determinista. 2 ejecuciones separadas devolverían lo mismo.
+        return ordenada.ThenBy(l => l.Id);
     }
 }

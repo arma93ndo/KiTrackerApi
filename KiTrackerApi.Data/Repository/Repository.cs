@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using KiTrackerApi.Core.Interfaces.Repository;
 using System.Linq.Expressions;
 using KiTrackerApi.Data.Context;
+using System.Reflection.Metadata.Ecma335;
 
 namespace KiTrackerApi.Data.Repository;
 
@@ -53,5 +54,20 @@ public class Repository<T> : IRepository<T> where T : class
     public void RemoveRange(IEnumerable<T> entities)
     {
         _dbSet.RemoveRange(entities);
+    }
+
+    public IQueryable<T> ObtenerQueryable()
+    {
+        return _dbSet.AsNoTracking();
+    }
+
+    public async Task<List<TResult>> MaterializarConsultaAsync<TResult>(IQueryable<TResult> consulta)
+    {
+        return await consulta.ToListAsync();   
+    }
+
+    public async Task<int> ContarConsultaAsync<TResult>(IQueryable<TResult> consulta)
+    {
+        return await consulta.CountAsync();
     }
 }

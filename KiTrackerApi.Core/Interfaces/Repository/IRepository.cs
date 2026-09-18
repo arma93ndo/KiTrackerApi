@@ -17,4 +17,9 @@ public interface IRepository<T> where T : class
     // Eliminación (Delete).
     void Remove(T entity);
     void RemoveRange(IEnumerable<T> entities);
+
+    // Patrón para poder hacer uso de una consulta IQueryable con el uso de Unit of Work sin violar la responsabilidad de las capas.
+    IQueryable<T> ObtenerQueryable();
+    Task<List<TResult>> MaterializarConsultaAsync<TResult>(IQueryable<TResult> consulta);
+    Task<int> ContarConsultaAsync<TResult>(IQueryable<TResult> consulta);
 }

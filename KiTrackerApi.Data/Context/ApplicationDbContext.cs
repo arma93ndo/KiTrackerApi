@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using KiTrackerApi.Core.Models;
+using KiTrackerApi.Data.Seed;
 
 namespace KiTrackerApi.Data.Context;
 
@@ -15,4 +16,13 @@ public class ApplicationDbContext : DbContext
     public DbSet<Lectura> Lecturas => Set<Lectura>();
     public DbSet<Dispositivo> Dispositivos => Set<Dispositivo>();
     public DbSet<Color> Colores => Set<Color>();
+
+    // Métodos y sembrado de datos.
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        // Llamo a mi método de sembrado de datos (estático).
+        DbInitializer.SeedKiTrackerApiAsync(modelBuilder);
+    }
 }

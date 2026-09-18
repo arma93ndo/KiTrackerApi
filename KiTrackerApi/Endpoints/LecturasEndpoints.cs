@@ -4,6 +4,8 @@ using KiTrackerApi.Core.Models;
 using KiTrackerApi.Errors;
 using Microsoft.AspNetCore.Mvc;
 using KiTrackerApi.Core.Constants;
+using KiTrackerApi.Common.DTOs;
+using KiTrackerApi.Common.Constants;
 
 namespace KiTrackerApi.Endpoints;
 
@@ -24,13 +26,6 @@ public static class LecturasEndpoints
         grupo.MapGet("/nombre/{nombreLuchador}", ObtenerPorNombreLuchador);
         grupo.MapGet("/max/{top:int}", ObtenerMaximos);
         grupo.MapGet("/rango", ObtenerPorRango);
-    }
-
-    static async Task<IResult> ObtenerTodas(ILecturaService service)
-    {
-        var lecturas = await service.ObtenerTodasAsync();
-
-        return TypedResults.Ok(lecturas ?? Enumerable.Empty<LecturaRespuestaDto>());
     }
 
     static async Task<IResult> ObtenerPorId(int id, ILecturaService service, HttpContext httpContext)
@@ -309,4 +304,44 @@ public static class LecturasEndpoints
 
         return TypedResults.Ok(lecturas);
     }
+
+    static async Task<IResult> ObtenerTodas(ILecturaService service, HttpContext httpContext,
+        long? kiMinimo = null, long? kiMaximo = null, string? ordenarPor = null,
+        bool descendente = false, int pagina = 1, int tamanioPagina = PaginacionConstantes.TAMANIO_PAGINA_POR_DEFECTO)
+    {
+        // 1. Me aseguro de sanitizar los tamaños de la paginación.
+        (pagina, tamanioPagina) = NormalizarPaginacion(pagina, tamanioPagina);
+
+        // 2. Obtengo solo la cantidad de datos solicitados desde la base de datos.
+        var (datos, totalRegistros) = await service.FiltrarAsync(
+            pagina: pagina,
+            tamanioPagina: tamanioPagina,
+            kiMinimo: kiMinimo,
+            kiMaximo: kiMaximo,
+            ordenarPor: ordenarPor,
+            descendente: descendente);
+
+        // 3. Devuelvo los datos en un DTO para el cliente.
+        return TypedResults.Ok(new RespuestaPaginadaDto<LecturaRespuestaDto>
+        {
+            Datos = datos,
+            Pagina = pagina,
+            TamanioPagina = tamanioPagina,
+            TotalRegistros = totalRegistros,
+            TotalPaginas = (int) Math.Ceiling(totalRegistros / (double)tamanioPagina)
+        });
+    }
+
+    // Normalizar número de pagína/tamaño de paǵina a valores sanos: página mínima 1, tamaño de página
+    // entre 1 y un límite.
+    static (int pagina, int TamanioPagina) NormalizarPaginacion(int pagina, int tamanioPagina)
+    {
+        if(pagina < 1) pagina = 1;
+        if(tamanioPagina < 1) tamanioPagina = PaginacionConstantes.TAMANIO_PAGINA_POR_DEFECTO;
+        if(tamanioPagina > PaginacionConstantes.TAMANIO_PAGINA_MAXIMO) tamanioPagina = PaginacionConstantes.TAMANIO_PAGINA_MAXIMO;
+        return (pagina, tamanioPagina);
+    }
 }
+
+
+

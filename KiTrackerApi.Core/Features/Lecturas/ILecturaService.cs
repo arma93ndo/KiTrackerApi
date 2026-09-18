@@ -4,6 +4,12 @@ namespace KiTrackerApi.Core.Features.Lecturas;
 
 public interface ILecturaService
 {
+    Task<(IEnumerable<LecturaRespuestaDto>, int TotalRegistros)> FiltrarAsync(int pagina,
+                                                                            int tamanioPagina,
+                                                                            long? kiMinimo,
+                                                                            long? kiMaximo,
+                                                                            string? ordenarPor,
+                                                                            bool descendente = false);
     Task<IEnumerable<LecturaRespuestaDto>> ObtenerTodasAsync();
     Task<LecturaRespuestaDto?> ObtenerByIdAsync(int id);
     Task<LecturaRespuestaDto> CrearLecturaAsync(CrearLecturaDto dto);
