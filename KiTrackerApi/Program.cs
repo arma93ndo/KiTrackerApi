@@ -14,6 +14,9 @@ using KiTrackerApi.Core.Features.Dispositivos;
 using KiTrackerApi.Core.Features.Lecturas;
 using KiTrackerApi.Endpoints;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,6 +56,67 @@ builder.Services.AddProblemDetails(options =>
 
 // Registro mi middleware del manejador de errores global.
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+// Registro el servicio de verificación de tokens JWT.
+// Importante mencionar que los token y el sistema de usuarios son cosas separadas en una aplicación.
+// Esta cpmfogiraco+pm de la API acepta y valida tokens JWT en las peticiones.
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    // Obtengo la clave desde los User Secrets creada vía "dotnet usesr-jwts"
+                    var signingKey = builder.Configuration["Authentication:Schemes:Bearer:SigningKeys:0:Value"]
+                                    ?? builder.Configuration["Jwt:SecretKey"]; // Valor por fallback en caso de usar
+                                    // appsettings.json (mala práctica).
+                    
+                    // Decodifico la clave de Uer Secrets desde Base64 (fallback a UTF8 si usas una
+                    // clave personalizada).
+                    byte[] keyBytes;
+                    try
+                    {
+                        keyBytes = Convert.FromBase64String(signingKey!);
+                    }
+                    catch(FormatException)
+                    {
+                        keyBytes = Encoding.UTF8.GetBytes(signingKey!);
+                    }
+
+                    // TokenValidationParameters: QUÉ se comprueba de cada token que llega. Sin estas
+                    // validaciones, aceptar un token sería como confiar en un papel que cualquiera
+                    // pudo haber escrito. Cada bandera cierra un agujero de seguridad.
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        // ¿QUIÉN emitió el token? Sólo aceptamos los qque emitió esta misma API. Sin
+                        // esto, un token válido de otro sistema que use la misma clave (o un emisor
+                        // comprometido) entraría aquí sin restricciones.
+                        ValidateIssuer = true,
+                        ValidIssuer = "dotnet-user-jwts",
+
+                        // ¿Para QUIÉN es el token? Un token emitido para otra aplicación no debería
+                        // servir en esta, aunque provenga de un emisor válido.
+                        ValidateAudience = true,
+                        ValidAudiences = new[] { "http://localhost:5111", "https://localhost:7297" },
+
+                        // ¿Está vigente? Comprueba el claim de expiración. Sin esto, la fecha de caduci-
+                        // dad del token que pusimos sería meramente decorativa.
+                        ValidateLifetime = true,
+
+                        // Por defecto, .NET permite 5 minutos de desfase de reloj entre servidores. Lo
+                        // bajamos a cero para que la expiración sea exacta. Un token vencido será
+                        // rechazado al instante.
+                        ClockSkew = TimeSpan.Zero,
+
+                        // ¿La firma del token coincide con su contenido? La pieza más importante, impide
+                        // que alguien edite un claim del payload (que recordemos, que es legible para
+                        // cualquiera) y se haga pasar por otro usuario.
+                        ValidateIssuerSigningKey = true,
+                        // La clave, en caso de usarla, provendría de un User Secret en el caso del entorno
+                        // de desarrollo. En el caso de un entorno de producción provendría de una variable
+                        // de entorno o de Azure Key Vault. Pero en ningún caso provendría del archivo
+                        // appsettings.json, ya que este último se sube y se versiona en el repositorio.
+                        IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
+                    };
+                });
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -273,6 +337,14 @@ app.UseExceptionHandler();
 app.UseStatusCodePages(); // Con esta línea, los códigos de error llegan al cliente rellenados
 // con la información del estándar Problem Details. De lo contrario, llegarían al cliente como
 // códigos de error completamente "pelones" (sin un body).
+
+// CUIDADO: Invertir el siguiente par de líneas no tiene sentido. La autorización necesita saber quién
+// eres para poder decidir. Sin .UseAuthentication delante, el usuario llegaría siempre anónimo y todo
+// endpoint protegido respondería con un 401 (Unauthorized).
+app.UseAuthentication(); // ¿Quién eres?. Lee el header "Authorization:" valida la firma y la expiración
+// del token y arma al usuario de la petición (HttpContext.User).
+app.UseAuthorization(); // ¿Puedes hacer eso?. Evalúa los requisitos del endpoint sobre ese usuario ya
+// identificado.
 
 // Expongo todos los endpoints necesarios en mi aplicación.
 app.MapLuchadoresEndpoints();

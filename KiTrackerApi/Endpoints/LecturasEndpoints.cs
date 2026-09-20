@@ -20,7 +20,8 @@ public static class LecturasEndpoints
         grupo.MapGet("/", ObtenerTodas);
         grupo.MapGet("/{id:int}", ObtenerPorId);
         grupo.MapPost("/", Crear);
-        grupo.MapDelete("/{id:int}", EliminarPorId);
+        grupo.MapDelete("/{id:int}", EliminarPorId).RequireAuthorization(); // Con esta sola llamada, el endpoint
+        // exige un token válido.
         grupo.MapGet("/especie/{especieId:int}", ObtenerPorEspecie);
         grupo.MapGet("/luchador/{luchadorId:int}", ObtenerPorLuchador);
         grupo.MapGet("/nombre/{nombreLuchador}", ObtenerPorNombreLuchador);

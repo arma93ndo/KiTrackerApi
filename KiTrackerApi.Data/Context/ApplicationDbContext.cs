@@ -1,11 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using KiTrackerApi.Core.Models;
 using KiTrackerApi.Data.Seed;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace KiTrackerApi.Data.Context;
 
 // Una buena práctica, es tener un solo DbContext por aplicación (solución).
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext : IdentityDbContext<IdentityUser>
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
     {}
