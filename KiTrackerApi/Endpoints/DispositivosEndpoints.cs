@@ -3,6 +3,7 @@ using KiTrackerApi.Core.Features.Dispositivos.DTOs;
 using KiTrackerApi.Core.Models;
 using KiTrackerApi.Errors;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace KiTrackerApi.Endpoints;
 
@@ -15,9 +16,9 @@ public static class DispositivosEndpoints
         var grupo = app.MapGroup("/dispositivos");
 
         // 2. Registro cada endpoint individualmente.
-        grupo.MapPost("/", Crear);
-        grupo.MapPut("/{id:int}", ActualizarPorId); 
-        grupo.MapDelete("/{id:int}", EliminarPorId);
+        grupo.MapPost("/", Crear).RequireAuthorization(); // Requiere un token JWT válido.
+        grupo.MapPut("/{id:int}", ActualizarPorId).RequireAuthorization(); // Requiere un token JWT válido.
+        grupo.MapDelete("/{id:int}", EliminarPorId).RequireAuthorization(); // Requiere un token JWT válido.
         grupo.MapGet("/{id:int}", ObtenerPorId);
         grupo.MapGet("/fingerprint/{id:int}", ObtenerPorFingerprint); 
         grupo.MapGet("/", ObtenerTodos); 
@@ -25,6 +26,7 @@ public static class DispositivosEndpoints
     }
 
     // Definición de todos los handlers.
+    [Authorize]
     static async Task<IResult> Crear([FromBody] CrearDispositivoDto dto, IDispositivoService service, HttpContext httpContext)
     {
         var parametrosInvalidos = new List<ParametroInvalido>();
@@ -63,6 +65,7 @@ public static class DispositivosEndpoints
         return TypedResults.Created($"/dispositivos/{dispositivoCreado.Id}", dispositivoCreado);
     }
 
+    [Authorize]
     static async Task<IResult> ActualizarPorId(int id, ActualizarDispositivoDto dto, IDispositivoService service, HttpContext httpContext)
     {
         // 1. Verifico que los parámetros enviados por el cliente sean válidos.
@@ -106,6 +109,7 @@ public static class DispositivosEndpoints
         return TypedResults.NoContent();
     }
 
+    [Authorize]
     static async Task<IResult> EliminarPorId(int id, IDispositivoService service, HttpContext httpContext)
     {
         var parametrosInvalidos = new List<ParametroInvalido>();

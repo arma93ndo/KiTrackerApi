@@ -5,6 +5,7 @@ using KiTrackerApi.Core.Features.Luchadores;
 using KiTrackerApi.Core.Features.Luchadores.DTOs;
 using KiTrackerApi.Errors;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace KiTrackerApi.Endpoints;
 
@@ -21,9 +22,9 @@ public static class LuchadoresEndpoints
         grupo.MapGet("/{id:int}", ObtenerPorId);
         grupo.MapGet("/nombre/{nombre}", ObtenerPorNombre);
         grupo.MapGet("/especie/{especieId:int}", ObtenerPorEspecie);
-        grupo.MapPost("/", Crear);
-        grupo.MapPut("/{id:int}", ActualizarPorId);
-        grupo.MapDelete("/{id:int}", EliminarPorId);
+        grupo.MapPost("/", Crear).RequireAuthorization(); // Requiere un token JWT válido.
+        grupo.MapPut("/{id:int}", ActualizarPorId).RequireAuthorization(); // Requiere un token JWT válido.
+        grupo.MapDelete("/{id:int}", EliminarPorId).RequireAuthorization(); // Requiere un token JWT válido.
     }
 
     // Definición de todos los handlers.
@@ -35,6 +36,7 @@ public static class LuchadoresEndpoints
         return TypedResults.Ok(luchadores);
     }
 
+    [Authorize]
     static async Task<IResult> Crear([FromBody] CrearLuchadorDto dto, ILuchadorService service, HttpContext httpContext)
     {
         var parametrosInvalidos = new List<ParametroInvalido>();
@@ -177,6 +179,7 @@ public static class LuchadoresEndpoints
         return TypedResults.Ok(luchadores);
     }
 
+    [Authorize]
     static async Task<IResult> ActualizarPorId(int id, ActualizarLuchadorDto dto, ILuchadorService service, HttpContext httpContext)
     {
         var parametrosInvalidos = new List<ParametroInvalido>();
@@ -213,6 +216,7 @@ public static class LuchadoresEndpoints
         return TypedResults.NoContent();
     }
 
+    [Authorize]
     static async Task<IResult> EliminarPorId(int id, ILuchadorService service, HttpContext httpContext)
     {
         var parametrosInvalidos = new List<ParametroInvalido>();

@@ -17,6 +17,9 @@ using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Identity;
+using KiTrackerApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,20 +67,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
                     // Obtengo la clave desde los User Secrets creada vía "dotnet usesr-jwts"
-                    var signingKey = builder.Configuration["Authentication:Schemes:Bearer:SigningKeys:0:Value"]
-                                    ?? builder.Configuration["Jwt:SecretKey"]; // Valor por fallback en caso de usar
-                                    // appsettings.json (mala práctica).
+                    var signingKey = builder.Configuration["Jwt:Clave"]
+                                    ?? builder.Configuration["Authentication:Schemes:Bearer:SigningKeys:0:Value"];
+                    
+                    if(string.IsNullOrWhiteSpace(signingKey))
+                    {
+                        throw new InvalidOperationException("Flata la clave de firma del JWT en la configuración (Secrets) de la aplicación.");
+                    }
                     
                     // Decodifico la clave de Uer Secrets desde Base64 (fallback a UTF8 si usas una
                     // clave personalizada).
                     byte[] keyBytes;
                     try
                     {
-                        keyBytes = Convert.FromBase64String(signingKey!);
+                        keyBytes = Convert.FromBase64String(signingKey);
                     }
                     catch(FormatException)
                     {
-                        keyBytes = Encoding.UTF8.GetBytes(signingKey!);
+                        keyBytes = Encoding.UTF8.GetBytes(signingKey);
                     }
 
                     // TokenValidationParameters: QUÉ se comprueba de cada token que llega. Sin estas
@@ -89,12 +96,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         // esto, un token válido de otro sistema que use la misma clave (o un emisor
                         // comprometido) entraría aquí sin restricciones.
                         ValidateIssuer = true,
-                        ValidIssuer = "dotnet-user-jwts",
+                        ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "dotnet-user-jwts",
 
                         // ¿Para QUIÉN es el token? Un token emitido para otra aplicación no debería
                         // servir en esta, aunque provenga de un emisor válido.
                         ValidateAudience = true,
-                        ValidAudiences = new[] { "http://localhost:5111", "https://localhost:7297" },
+                        ValidAudiences = new[] { builder.Configuration["Jwt:Audience"] ?? "http://localhost:5111" },
 
                         // ¿Está vigente? Comprueba el claim de expiración. Sin esto, la fecha de caduci-
                         // dad del token que pusimos sería meramente decorativa.
@@ -117,6 +124,33 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     };
                 });
 builder.Services.AddAuthorization();
+
+// Habilito el uso de ASP.NET Identity. Hago uso de .AddIdentityCore() y no de .AddIdentity(), ya que
+// este último hace autenticación por cookies, cosa que necesita el uso de navegadores. Obviamente en
+// esta minimal API no usamos navegadores ni tenemos vistas (.cshtml) de servidor. Esta minimal API
+// sólo responde con JSONs brutos y autentica tokens JWT. .AddIdentityCore() trae lo que sí necesitamos:
+// UserManager y el almacén de usuarios (tablas AspNet* de Identity).
+builder.Services.AddIdentityCore<IdentityUser>(options =>
+{
+    // Aquí definio las reglas que las contraseñas de los usuarios deben cumplir. Estas deberán ser de
+    // por lo menos 8 caracteres, deben incluir mayúsculas, minúsculas, números y símbolos especiales.
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireDigit = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequiredLength = 8;
+
+    // Dos usuarios no pueden compartir un email. Identity lo hace con un índice único (UNIQUE_INDEX) en
+    // la BBDD, no se hace con un simple if. La garantía de unicidad del correo electrónico la da el
+    // motor de BBDD.
+    options.User.RequireUniqueEmail = true;
+}).AddEntityFrameworkStores<ApplicationDbContext>(); // Esta línea le dice a Identity dónde guardar a los
+// usuarios, que será nuestro propio contexto (ApplicationDbContext). Por eso es que nuestro contexto
+// tuvo que heredar de IdentityDbContext, para que lo sepa usar.
+
+// Registro el uso de mi servicio generador de tokens JWT.
+builder.Services.AddScoped<JwtTokenService>();
+
 
 var app = builder.Build();
 
@@ -352,6 +386,7 @@ app.MapDispositivosEndpoints();
 app.MapLecturasEndpoints();
 app.MapColoresEndpoints();
 app.MapEspeciesEndpoints();
+app.MapAuthEndpoints();
 app.MapGet("/", () => "Hello World!");
 
 app.Run();

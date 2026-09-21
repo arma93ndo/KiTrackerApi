@@ -15,7 +15,7 @@ public class JwtTokenService : IJwtTokenService
         _configuracion = configuracion;
     }
 
-    public (string Token, DateTime Expiracion) GenerarToken(string usuarioId, string email, string nombreUsuario)
+    public (string Token, DateTime Expiracion) GenerarToken(string nombreDeUsuario, string email)
     {
         // Los claims son lo que el token afirma (pares clave-valor) sobre el usuario.
         // El Jti (JSON Web Token Identifier) identifica a este token en concreto. Sirve para poder
@@ -23,7 +23,7 @@ public class JwtTokenService : IJwtTokenService
         // El payload no está cifrado nunca en JWT.
         var claims = new List<Claim>
         {
-            new(JwtRegisteredClaimNames.Sub, usuarioId),
+            new(JwtRegisteredClaimNames.Sub, nombreDeUsuario),
             new(JwtRegisteredClaimNames.Email, email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
@@ -31,10 +31,20 @@ public class JwtTokenService : IJwtTokenService
         // La clave de la firma (para poder producir los JWT) proviene de la configuración, que en
         // el caso del entorno de desarrollo son los User Secrets. Si falta este secreto, preferimos
         // tronar la aplicación con un mensaje claro antes que arrancarla con una clave vacía.
+        byte[] keyBytes;
         var claveJwt = _configuracion["Jwt:Clave"] ?? throw new InvalidOperationException("Falta la clave de firma del JWT." +
         "Configúrala por favor con: dotnet user-secrets set \"Jwt:Clave\" \"<clave de 32+ caracteres>\".");
 
-        var llaveSimetrica = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(claveJwt));
+         try
+        {
+            keyBytes = Convert.FromBase64String(claveJwt);
+        }
+        catch(FormatException)
+        {
+            keyBytes = Encoding.UTF8.GetBytes(claveJwt);
+        }
+
+        var llaveSimetrica = new SymmetricSecurityKey(keyBytes);
         // La firma no esconde el contenido, lo protege de modificaciones. Y como sólo el servidor
         // conoce la clave, nadie más puede fabricar tokens.
         var credenciales = new SigningCredentials(llaveSimetrica, SecurityAlgorithms.HmacSha256);

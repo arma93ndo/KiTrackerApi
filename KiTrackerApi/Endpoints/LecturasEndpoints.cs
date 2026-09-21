@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using KiTrackerApi.Core.Constants;
 using KiTrackerApi.Common.DTOs;
 using KiTrackerApi.Common.Constants;
+using Microsoft.AspNetCore.Authorization;
 
 namespace KiTrackerApi.Endpoints;
 
@@ -19,7 +20,7 @@ public static class LecturasEndpoints
         // 2. Registro cada endpoint existente uno por uno.
         grupo.MapGet("/", ObtenerTodas);
         grupo.MapGet("/{id:int}", ObtenerPorId);
-        grupo.MapPost("/", Crear);
+        grupo.MapPost("/", Crear).RequireAuthorization(); // Exige un token JWT válido.
         grupo.MapDelete("/{id:int}", EliminarPorId).RequireAuthorization(); // Con esta sola llamada, el endpoint
         // exige un token válido.
         grupo.MapGet("/especie/{especieId:int}", ObtenerPorEspecie);
@@ -61,6 +62,7 @@ public static class LecturasEndpoints
         return TypedResults.Ok(lectura);
     }
 
+    [Authorize]
     static async Task<IResult> Crear([FromBody] CrearLecturaDto dto, ILecturaService service, HttpContext httpContext)
     {
         var parametrosInvalidos = new List<ParametroInvalido>();
@@ -106,6 +108,7 @@ public static class LecturasEndpoints
         return TypedResults.Created($"/lecturas/{lecturaNueva.Id}", lecturaNueva);
     }
 
+    [Authorize]
     static async Task<IResult> EliminarPorId(int id, ILecturaService service, HttpContext httpContext)
     {
         var parametrosInvalidos = new List<ParametroInvalido>();
