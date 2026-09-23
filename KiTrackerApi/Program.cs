@@ -20,6 +20,8 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Identity;
 using KiTrackerApi.Services;
+using Microsoft.Extensions.DependencyInjection;
+using KiTrackerApi.Common.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +61,19 @@ builder.Services.AddProblemDetails(options =>
 
 // Registro mi middleware del manejador de errores global.
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+
+// Registro el servicio de "health checks" (.AddHealthChecks()). El endpoint "/health" debería
+// responder "Healthy" si es que la app está viva. Los servicios orquestadores y monitores lo
+// utilizan para dar seguimiento a la salud de la aplicación (tiempo en línea u "uptime").
+builder.Services.AddHealthChecks()
+                .AddDbContextCheck<ApplicationDbContext>(
+                    name: "database", 
+                    tags: new[] { "db", "sqlite" }
+                )
+                .AddCheck<HealthCheckEspacioEnDisco>(
+                    name: "espacio_disco",
+                    tags: new[] { "sistema", "almacenamiento" });
 
 // Registro el servicio de verificación de tokens JWT.
 // Importante mencionar que los token y el sistema de usuarios son cosas separadas en una aplicación.
@@ -379,6 +394,9 @@ app.UseAuthentication(); // ¿Quién eres?. Lee el header "Authorization:" valid
 // del token y arma al usuario de la petición (HttpContext.User).
 app.UseAuthorization(); // ¿Puedes hacer eso?. Evalúa los requisitos del endpoint sobre ese usuario ya
 // identificado.
+
+// Este endpoint responderá 200 "Healthy" en caso de que la app esté viva ("up and running").
+app.MapHealthChecks("/health");
 
 // Expongo todos los endpoints necesarios en mi aplicación.
 app.MapLuchadoresEndpoints();
