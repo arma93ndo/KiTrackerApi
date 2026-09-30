@@ -16,13 +16,60 @@ public static class DispositivosEndpoints
         var grupo = app.MapGroup("/dispositivos");
 
         // 2. Registro cada endpoint individualmente.
-        grupo.MapPost("/", Crear).RequireAuthorization(); // Requiere un token JWT válido.
-        grupo.MapPut("/{id:int}", ActualizarPorId).RequireAuthorization(); // Requiere un token JWT válido.
-        grupo.MapDelete("/{id:int}", EliminarPorId).RequireAuthorization(); // Requiere un token JWT válido.
-        grupo.MapGet("/{id:int}", ObtenerPorId);
-        grupo.MapGet("/fingerprint/{id:int}", ObtenerPorFingerprint); 
-        grupo.MapGet("/", ObtenerTodos); 
-        grupo.MapGet("/color/{colorId:int}", ObtenerPorColor);
+        grupo.MapPost("/", Crear).RequireAuthorization() // Requiere un token JWT válido.
+                .WithName("CrearNuevoDispositivo")
+                .WithTags("Dispositivos")
+                .WithSummary("Crear un nuevo dispositivo en la base de datos")
+                .WithDescription("Crear un nuevo dispositivo con los datos que envíes en el body de tu solicitud. Este endpoint require estar logueado con un JWT")
+                .Produces<DispositivoRespuestaDto>(StatusCodes.Status201Created)
+                .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        grupo.MapPut("/{id:int}", ActualizarPorId).RequireAuthorization() // Requiere un token JWT válido.
+                .WithName("ActualizarDispositivoPorId")
+                .WithTags("Dispositivos")
+                .WithSummary("Actualizar un dispositivo por Id")
+                .WithDescription("Actualiza un dispositivo existente con los datos que envíes en el body de tu solicitud. Este endpoint require estar logueado con un JWT")
+                .Produces(StatusCodes.Status204NoContent)
+                .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        grupo.MapDelete("/{id:int}", EliminarPorId).RequireAuthorization() // Requiere un token JWT válido.
+                .WithName("EliminarDispositivoPorId")
+                .WithTags("Dispositivos")
+                .WithSummary("Eliminar un dispositivo existente mediante su Id")
+                .WithDescription("Eliminar un dispositivo de la aplicación mediante su Id. Este endpoint require estar logueado con un JWT")
+                .Produces(StatusCodes.Status204NoContent)
+                .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        grupo.MapGet("/{id:int}", ObtenerPorId)
+                .WithName("ObtenerDispositivoPorId")
+                .WithTags("Dispositivos")
+                .WithSummary("Obtiene un dispositivo mediante su Id")
+                .WithDescription("Obtiene un dispositivo en específico mediante su Id y lo devuelve como un objeto JSON")
+                .Produces<DispositivoRespuestaDto>(StatusCodes.Status200OK)
+                .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        grupo.MapGet("/fingerprint/{id:int}", ObtenerPorFingerprint)
+                .WithName("ObtenerDispositivoPorFingerprint")
+                .WithTags("Dispositivos")
+                .WithSummary("Obtiene un dispositivo especificándolo mediante su fingerprint")
+                .WithDescription("Obtiene un dispositivo en específico ubicándolo por medio de su fingerprint y lo devuelve como un objeto JSON")
+                .Produces<DispositivoRespuestaDto>(StatusCodes.Status200OK)
+                .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        grupo.MapGet("/", ObtenerTodos)
+                .WithName("ObtenerTodosLosDispositivos")
+                .WithTags("Dispositivos")
+                .WithSummary("Obtiene todos los dispositivos disponibles")
+                .WithDescription("Obtiene una lista con todos los dispositivos existentes y la devuelve en formato JSON")
+                .Produces<IEnumerable<DispositivoRespuestaDto>>(StatusCodes.Status200OK);
+
+        grupo.MapGet("/color/{colorId:int}", ObtenerPorColor)
+                .WithName("ObtenerDispositivosPorColor")
+                .WithTags("Dispositivos")
+                .WithSummary("Obtiene todos los dispositivos de un color")
+                .WithDescription("Obtiene todos los dispositivos existentes que compartan un color especificado y devuelve la lista como un objeto JSON")
+                .Produces<IEnumerable<DispositivoRespuestaDto>>(StatusCodes.Status200OK)
+                .ProducesProblem(StatusCodes.Status400BadRequest);
     }
 
     // Definición de todos los handlers.

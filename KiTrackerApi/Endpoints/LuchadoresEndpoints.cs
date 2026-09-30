@@ -18,13 +18,62 @@ public static class LuchadoresEndpoints
         var grupo = app.MapGroup("/luchadores");
 
         // 2. Registro mis rutas individuales en base a mi raíz (grupo) (/luchadores/xxxxxx).
-        grupo.MapGet("/", ObtenerTodos); 
-        grupo.MapGet("/{id:int}", ObtenerPorId);
-        grupo.MapGet("/nombre/{nombre}", ObtenerPorNombre);
-        grupo.MapGet("/especie/{especieId:int}", ObtenerPorEspecie);
-        grupo.MapPost("/", Crear).RequireAuthorization(); // Requiere un token JWT válido.
-        grupo.MapPut("/{id:int}", ActualizarPorId).RequireAuthorization(); // Requiere un token JWT válido.
-        grupo.MapDelete("/{id:int}", EliminarPorId).RequireAuthorization(); // Requiere un token JWT válido.
+        grupo.MapGet("/", ObtenerTodos)
+                .WithName("ObtenerTodosLosLuchadores")
+                .WithTags("Luchadores")
+                .WithSummary("Obtiene todos los luchadores existentes")
+                .WithDescription("Obtiene una lista con todos los luchadores existentes y la devuelve como un objeto JSON")
+                .Produces<LuchadorRespuestaDto>(StatusCodes.Status200OK);
+
+        grupo.MapGet("/{id:int}", ObtenerPorId)
+                .WithName("ObtenerLuchadorPorId")
+                .WithTags("Luchadores")
+                .WithSummary("Obtiene un luchador en específico por Id")
+                .WithDescription("Obtiene un luchador específico, basándose en su Id y lo regresa como un JSON")
+                .Produces<LuchadorRespuestaDto>(StatusCodes.Status200OK)
+                .ProducesProblem(StatusCodes.Status400BadRequest)
+                .ProducesProblem(StatusCodes.Status404NotFound);
+
+        grupo.MapGet("/nombre/{nombre}", ObtenerPorNombre)
+                .WithName("ObtenerLuchadorPorNombre")
+                .WithTags("Luchadores")
+                .WithSummary("Obtiene un luchador en específico basándose en su nombre")
+                .WithDescription("Obtiene un luchador específico basándose en su nombre de pila y lo regresa como un JSON")
+                .Produces<LuchadorRespuestaDto>(StatusCodes.Status200OK)
+                .ProducesProblem(StatusCodes.Status400BadRequest)
+                .ProducesProblem(StatusCodes.Status404NotFound);
+
+        grupo.MapGet("/especie/{especieId:int}", ObtenerPorEspecie)
+                .WithName("ObtenerLuchadoresDeUnaEspecie")
+                .WithTags("Luchadores")
+                .WithSummary("Obtiene todos los luchadores de una especie dada")
+                .WithDescription("Obtiene a todos los luchadores de una especie especificada y devuelve la lista como un objeto JSON")
+                .Produces<IEnumerable<LuchadorRespuestaDto>>(StatusCodes.Status200OK)
+                .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        grupo.MapPost("/", Crear).RequireAuthorization() // Requiere un token JWT válido.
+                .WithName("CrearNuevoLuchador")
+                .WithTags("Luchadores")
+                .WithSummary("Crea un nuevo luchador en la base de datos")
+                .WithDescription("Crea un nuevo luchador basándose en la información que envíes en el body de tu solicitud. Este endpoint requiere estar logueado con un JWT")
+                .Produces<LuchadorRespuestaDto>(StatusCodes.Status201Created)
+                .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        grupo.MapPut("/{id:int}", ActualizarPorId).RequireAuthorization() // Requiere un token JWT válido.
+                .WithName("ActualizarLuchadorPorId")
+                .WithTags("Luchadores")
+                .WithSummary("Actualiza un luchador existente mediante su Id")
+                .WithDescription("Actualiza un luchador existente en la aplicación utilizando los datos que envíes en el body de tu solicitud. Este endpoint require estar logueado con un JWT")
+                .Produces(StatusCodes.Status204NoContent)
+                .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        grupo.MapDelete("/{id:int}", EliminarPorId).RequireAuthorization() // Requiere un token JWT válido.
+                .WithName("EliminarLuchadorPorId")
+                .WithTags("Luchadores")
+                .WithSummary("Eliminar un luchador existente mediante su Id")
+                .WithDescription("Elimina un luchador existente en la aplicación mediante su Id. Este endpoint require estar logueado con un JWT")
+                .Produces(StatusCodes.Status204NoContent)
+                .ProducesProblem(StatusCodes.Status400BadRequest);
     }
 
     // Definición de todos los handlers.
@@ -213,6 +262,7 @@ public static class LuchadoresEndpoints
         // 3. Si está todo correcto, modifico el recurso solicitado.
         await service.ActualizarByIdAsync(id, dto);
         
+        // Status 204 No Content.
         return TypedResults.NoContent();
     }
 

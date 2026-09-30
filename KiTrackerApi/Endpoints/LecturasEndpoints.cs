@@ -18,16 +18,76 @@ public static class LecturasEndpoints
         var grupo = app.MapGroup("/lecturas");
 
         // 2. Registro cada endpoint existente uno por uno.
-        grupo.MapGet("/", ObtenerTodas);
-        grupo.MapGet("/{id:int}", ObtenerPorId);
-        grupo.MapPost("/", Crear).RequireAuthorization(); // Exige un token JWT válido.
-        grupo.MapDelete("/{id:int}", EliminarPorId).RequireAuthorization(); // Con esta sola llamada, el endpoint
-        // exige un token válido.
-        grupo.MapGet("/especie/{especieId:int}", ObtenerPorEspecie);
-        grupo.MapGet("/luchador/{luchadorId:int}", ObtenerPorLuchador);
-        grupo.MapGet("/nombre/{nombreLuchador}", ObtenerPorNombreLuchador);
-        grupo.MapGet("/max/{top:int}", ObtenerMaximos);
-        grupo.MapGet("/rango", ObtenerPorRango);
+        grupo.MapGet("/", ObtenerTodas)
+                .WithName("ObtenerTodasLasLecturas")
+                .WithTags("Lecturas")
+                .WithSummary("Obtiene todas las lecturas disponibles según ciertos filtros")
+                .WithDescription("Este método devuelve una lista con las lecturas (formato JSON) que cumplan con ciertos criterios. Puedes especificar los registros que deseas obtener por ki máximo, ki mínimo, ordenar el resultado por una columna conocida, en orden ascendente o descendente. El resultado estará paginado, puedes especificar cuantos registros incluirá cada página.")
+                .Produces<RespuestaPaginadaDto<LecturaRespuestaDto>>(StatusCodes.Status200OK);
+
+        grupo.MapGet("/{id:int}", ObtenerPorId)
+                .WithName("ObtenerLecturaPorId")
+                .WithTags("Lecturas")
+                .WithSummary("Obtiene una lectura en particular por su Id")
+                .WithDescription("Obtiene una lectura en específico mediante su Id y la devuelve en formato JSON")
+                .Produces<LecturaRespuestaDto>(StatusCodes.Status200OK)
+                .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        grupo.MapPost("/", Crear).RequireAuthorization() // Exige un token JWT válido.
+                .WithName("CrearNuevaLectura")
+                .WithTags("Lecturas")
+                .WithSummary("Crea una nueva lectura en la base de datos")
+                .WithDescription("Crea una nueva lectura en base a la información que envíes en el body de tu solicitud. Este endpoint require estar logueado con un JWT")
+                .Produces<LecturaRespuestaDto>(StatusCodes.Status201Created)
+                .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        grupo.MapDelete("/{id:int}", EliminarPorId).RequireAuthorization() // Con esta sola llamada, el endpoint exige un token válido.
+                .WithName("EliminarLecturaPorId")
+                .WithTags("Lecturas")
+                .WithSummary("Elimina una lectura existente mediante su Id")
+                .WithDescription("Elimina una lectura existente especificándola por su Id. Este endpoint require estar logueado con un JWT")
+                .Produces(StatusCodes.Status204NoContent)
+                .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        grupo.MapGet("/especie/{especieId:int}", ObtenerPorEspecie)
+                .WithName("ObtenerLecturasPorEspecie")
+                .WithTags("Lecturas")
+                .WithSummary("Obtiene todas las lecturas asociadas a una especie dada")
+                .WithDescription("Obtiene una lista con todas las lecturas relacionadas a una especie en concreto y la devuelve en formato JSON")
+                .Produces<IEnumerable<LecturaRespuestaDto>>(StatusCodes.Status200OK)
+                .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        grupo.MapGet("/luchador/{luchadorId:int}", ObtenerPorLuchador)
+                .WithName("ObtenerLecturasPorLuchador")
+                .WithTags("Lecturas")
+                .WithSummary("Obtiene todas las lecturas de un luchador especificado")
+                .WithDescription("Obtiene una lista con todas las lecturas asociadas a un luchador, especificándo a este último por su Id. Devuelve la lista en formato JSON")
+                .Produces<IEnumerable<LecturaRespuestaDto>>(StatusCodes.Status200OK)
+                .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        grupo.MapGet("/nombre/{nombreLuchador}", ObtenerPorNombreLuchador)
+                .WithName("ObtenerLecturasPorNombreDeLuchador")
+                .WithTags("Lecturas")
+                .WithSummary("Obtiene todas las lecturas de un luchador, especificándolo por nombre")
+                .WithDescription("Obtiene una lista con todas las lecturas disponibles asociadas a un luchador en específico, referenciándolo por su nombre de pila. Devuelve la lista en formato JSON")
+                .Produces<IEnumerable<LecturaRespuestaDto>>(StatusCodes.Status200OK)
+                .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        grupo.MapGet("/max/{top:int}", ObtenerMaximos)
+                .WithName("ObtenerKisMaximos")
+                .WithTags("Lecturas")
+                .WithSummary("Obtiene los 'top' máximos kis registrados")
+                .WithDescription("Obtiene las lecturas con los kis más altos disponibles en la base de datos. La cantidad de kis devueltos la especifica el parámetro de entrada 'top'")
+                .Produces<IEnumerable<LecturaRespuestaDto>>(StatusCodes.Status200OK)
+                .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        grupo.MapGet("/rango", ObtenerPorRango)
+                .WithName("ObtenerKisDentroDeRango")
+                .WithTags("Lecturas")
+                .WithSummary("Obtiene las lecturas de kis dentro de un rango")
+                .WithDescription("Obtiene una lista con las lecturas disponibles que se hallen dentro de un rango especificado. Los parámetros para especificar el rango son los números enteros 'minimo' y 'maximo'")
+                .Produces<IEnumerable<LecturaRespuestaDto>>(StatusCodes.Status200OK)
+                .ProducesProblem(StatusCodes.Status400BadRequest);
     }
 
     static async Task<IResult> ObtenerPorId(int id, ILecturaService service, HttpContext httpContext)
@@ -336,7 +396,7 @@ public static class LecturasEndpoints
         });
     }
 
-    // Normalizar número de pagína/tamaño de paǵina a valores sanos: página mínima 1, tamaño de página
+    // Normalizar número de pagina/tamaño de pagina a valores sanos: página mínima 1, tamaño de página
     // entre 1 y un límite.
     static (int pagina, int TamanioPagina) NormalizarPaginacion(int pagina, int tamanioPagina)
     {

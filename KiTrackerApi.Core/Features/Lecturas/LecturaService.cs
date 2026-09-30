@@ -250,7 +250,6 @@ public class LecturaService : ILecturaService
                                                                                         string? ordenarPor,
                                                                                         bool descendente = false)
     {
-        Console.WriteLine($"DEBUG FILTROS -> KiMinimo: {kiMinimo}, KiMaximo: {kiMaximo}"); // TODO: Eliminar esta línea.
         // 1. Obtengo un IQueryable para poder preparar una consulta (Deferred execution).
         IQueryable<Lectura> consulta = _uow.Lecturas.ObtenerQueryable();
 

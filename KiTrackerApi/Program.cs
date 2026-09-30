@@ -22,6 +22,8 @@ using Microsoft.AspNetCore.Identity;
 using KiTrackerApi.Services;
 using Microsoft.Extensions.DependencyInjection;
 using KiTrackerApi.Common.HealthChecks;
+using Microsoft.AspNetCore.OpenApi;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,6 +64,8 @@ builder.Services.AddProblemDetails(options =>
 // Registro mi middleware del manejador de errores global.
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
+// El método AddOpenApi() genera el documento OpenAPI del proyecto (la descripción de todos sus endpoints).
+builder.Services.AddOpenApi("v1");
 
 // Registro el servicio de "health checks" (.AddHealthChecks()). El endpoint "/health" debería
 // responder "Healthy" si es que la app está viva. Los servicios orquestadores y monitores lo
@@ -166,8 +170,11 @@ builder.Services.AddIdentityCore<IdentityUser>(options =>
 // Registro el uso de mi servicio generador de tokens JWT.
 builder.Services.AddScoped<JwtTokenService>();
 
-
+/*******************************************************/
+/*********** CONSTRUCCIÓN DE LA APLICACIÓN *************/
 var app = builder.Build();
+/*******************************************************/
+/*******************************************************/
 
 #region BLOQUE DE PRUEBA REPOSITORIOS SIN ENDPOINTS HTTP
 // // Borrar luego de probar.
@@ -387,8 +394,15 @@ app.UseStatusCodePages(); // Con esta línea, los códigos de error llegan al cl
 // con la información del estándar Problem Details. De lo contrario, llegarían al cliente como
 // códigos de error completamente "pelones" (sin un body).
 
+if(app.Environment.IsDevelopment())
+{
+    app.MapOpenApi(); // Sirve el documento OpenAPI en "/openapi/v1.json" (en este caso).
+
+    app.MapScalarApiReference(); // Sirve la GUI de Scalar en: "http://localhost:XXXX/scalar/v1" (en este caso).
+}
+
 // CUIDADO: Invertir el siguiente par de líneas no tiene sentido. La autorización necesita saber quién
-// eres para poder decidir. Sin .UseAuthentication delante, el usuario llegaría siempre anónimo y todo
+// eres para poder decidir. Sin .UseAuthentication() delante, el usuario llegaría siempre anónimo y todo
 // endpoint protegido respondería con un 401 (Unauthorized).
 app.UseAuthentication(); // ¿Quién eres?. Lee el header "Authorization:" valida la firma y la expiración
 // del token y arma al usuario de la petición (HttpContext.User).

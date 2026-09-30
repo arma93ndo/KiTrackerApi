@@ -1,4 +1,5 @@
 using KiTrackerApi.Core.Features.Especies;
+using KiTrackerApi.Core.Features.Especies.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KiTrackerApi.Endpoints;
@@ -12,7 +13,12 @@ public static class EspeciesEndpoints
         var grupo = app.MapGroup("/especies");
 
         // 2. Registro mis rutas (endpoints) individuales tomando como base mi raíz/grupo (/colores/xxxxx).
-        grupo.MapGet("/", ObtenerTodos);
+        grupo.MapGet("/", ObtenerTodos)
+                .WithName("ObtenerTodasLasEspecies")
+                .WithTags("Especies")
+                .WithSummary("Obtiene todos los colores disponibles")
+                .WithDescription("Obtiene una lista con todos los colores existentes en la aplicación y la devuelve como un objeto JSON")
+                .Produces<EspecieRespuestaDto>(StatusCodes.Status200OK);
     }
 
     // Defino todos los handlers.

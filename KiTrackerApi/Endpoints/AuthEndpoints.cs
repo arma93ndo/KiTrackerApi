@@ -14,8 +14,21 @@ public static class AuthEndpoints
     {
         var grupo = app.MapGroup("/auth");
 
-        grupo.MapPost("/registrar", Registrar);
-        grupo.MapPost("/login", Login);
+        grupo.MapPost("/registrar", Registrar)
+            .WithName("RegistarNuevoUsuario")
+            .WithTags("Auth")
+            .WithSummary("Registra un nuevo usuario en la aplicación")
+            .WithDescription("Registra un nuevo usuario en la aplicación basándose en los datos que proporciones en el body de tu solicitud")
+            .Produces(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        grupo.MapPost("/login", Login)
+            .WithName("Loguearse como un usuario existente")
+            .WithTags("Auth")
+            .WithSummary("Loguearte en la aplicación")
+            .WithDescription("Inicia sesión dentro de la aplicación autenticándote como un usuario existente. Esta operación te contestará con un JWT válido con fecha de expiración que te autenticará con tu identidad.")
+            .Produces<TokenRespuestaDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
     }
 
     static async Task<IResult> Registrar(RegistrarUsuarioDto dto, UserManager<IdentityUser> userManager)

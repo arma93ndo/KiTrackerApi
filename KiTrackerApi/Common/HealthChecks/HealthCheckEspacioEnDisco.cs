@@ -20,21 +20,21 @@ public class HealthCheckEspacioEnDisco : IHealthCheck
         // Convierto el espacio disponible a Megabytes.
         var megabytesLibres = volumen.AvailableFreeSpace / (1024 * 1024);
 
-        if(megabytesLibres < ReglasHealthChecks.ESPACIO_EN_DISCO_CRITICO_MB)
+        if(megabytesLibres <= ReglasHealthChecks.ESPACIO_EN_DISCO_CRITICO_MB)
         {
             // Espacio en disco críticamente bajo.
             _logger.LogError("HealthCheck fallido. Espacio en disco críticamente bajo: {MegaBytesLibres} MB disponibles.", megabytesLibres);
             return Task.FromResult(HealthCheckResult.Unhealthy($"Espacio en disco crítico: {megabytesLibres} MB disponibles."));
         }
 
-        if(megabytesLibres < ReglasHealthChecks.ESPACIO_EN_DISCO_DISMINUIDO_MB)
+        if(megabytesLibres <= ReglasHealthChecks.ESPACIO_EN_DISCO_DISMINUIDO_MB)
         {
             // Espacio en disco disminuido.
             _logger.LogWarning("HealthCheck en riesgo. Espacio en disco bajo: {MegaBytesLibres} MB disponibles.", megabytesLibres);
             return Task.FromResult(HealthCheckResult.Degraded($"Espacio en disco bajo: {megabytesLibres} MB disponibles."));
         }
 
-        // Es espacio en disco duro es más que suficiente.
+        // El espacio en disco duro es más que suficiente.
         _logger.LogInformation("Verificación del disco exitosa. Megabytes disponibles: {MegabytesLibres} MB.", megabytesLibres);
         return Task.FromResult(HealthCheckResult.Healthy($"Espacio en disco suficiente."));
     }
