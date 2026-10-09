@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="KiTrackerApi.Core/KiTrackerApi.Core.csproj" />
   <Project Path="KiTrackerApi.Data/KiTrackerApi.Data.csproj" />
+  <Project Path="KiTrackerApi.Tests/KiTrackerApi.Tests.csproj" />
   <Project Path="KiTrackerApi/KiTrackerApi.csproj" />
 </Solution>

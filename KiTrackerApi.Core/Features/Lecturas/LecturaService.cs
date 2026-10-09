@@ -26,18 +26,15 @@ public class LecturaService : ILecturaService
         var luchadorExistente = await _uow.Luchadores.GetByIdConEspecieAsync(dto.LuchadorId);
 
         if(luchadorExistente is null)
-            // TODO: Corregir esta excepción con el nuevo formato Problem Details.
             throw new KeyNotFoundException($"El luchador con el Id {dto.LuchadorId} no existe en la BBDD. Creación de Lectura imposible.");
         
         if(string.IsNullOrWhiteSpace(dto.FingerprintDispositivo))
             // Imposible hacer la creación.
-            // TODO: Corregir esta excepción con el nuevo formato Problem Details.
             throw new ArgumentException($"El fingerprint de dispositivo enviado no es válido. Creación del Lectura imposible.");
 
         var fingerprintLimpio = dto.FingerprintDispositivo.Trim();
         var dispositivoExistente = await _uow.Dispositivos.GetByFingerprintConDetallesAsync(fingerprintLimpio);
         if(dispositivoExistente is null)
-            // TODO: Corregir esta excepción con el nuevo formato Problem Details.
             throw new KeyNotFoundException($"El dispositivo con el Id {dto.FingerprintDispositivo} no existe en la BBDD. Creación de Lectura imposible.");
         
         // 2. Como el dispositivo obtenido está creando la nueva lectura, actualizo su fecha de uso para que el Change Tracker lo detecte.
@@ -81,7 +78,7 @@ public class LecturaService : ILecturaService
 
         if(lectura is null)
             // Eliminación imposible.
-            throw new KeyNotFoundException($"La lecutra con el Id '{id}' no existe en la BBDD. Eliminación imposible.");
+            throw new KeyNotFoundException($"La lectura con el Id '{id}' no existe en la BBDD. Eliminación imposible.");
             
         // 2. Realizo la operación de borrado para que el Change Tracker la detecte.
         _uow.Lecturas.Remove(lectura);
@@ -285,8 +282,6 @@ public class LecturaService : ILecturaService
         // no forman parte de la página especificada).
         consultaDto = consultaDto.Skip((pagina - 1) * tamanioPagina)
                                     .Take(tamanioPagina);
-
-        
 
         // 7. Ejecuto de forma asíncrona en el servicio, delego la materialización de la consulta a mi repositorio
         // con un método de extensión.
