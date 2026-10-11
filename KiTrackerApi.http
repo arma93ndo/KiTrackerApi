@@ -1,0 +1,86 @@
+### Variables Globales
+@hostname = localhost
+@port = 5111
+@baseUrl = http://{{hostname}}:{{port}}
+@validUser = admin
+@validEmail = admin@example.com
+@userPassword = Admin123!
+# Variable para almacenar el JWT una vez obtenido en el login
+@authToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBleGFtcGxlLmNvbSIsImVtYWlsIjoiYWRtaW5AZXhhbXBsZS5jb20iLCJqdGkiOiIzZjAyYzhhNS1iMzg1LTRmYzEtOTQ1My02YmMxYWQ1MWFjMjUiLCJleHAiOjE3OTE2ODM2OTAsImlzcyI6ImRvdG5ldC11c2VyLWp3dHMiLCJhdWQiOiJodHRwOi8vbG9jYWxob3N0OjUxMTEifQ.jEzXmVfN4UvuM7gnqk-CYQh3gbWbatwJrsg26N3LBTk
+@kiMinimo = 10000
+@kiMaximo = 1000000000
+@ordenarPor = fecha
+@especieBuscada = 1
+@luchadorBuscado = 32
+@nombreLuchadorBuscado = Piccolo
+@topMaximosKis = 20
+
+### 0. Health Check
+GET {{baseUrl}}/health
+
+### 1. Creo un nuevo usuario válido.
+POST {{baseUrl}}/auth/registrar
+Content-Type: application/json
+
+{
+    "password": "{{userPassword}}",
+    "email": "{{validEmail}}"
+}
+
+### 2. Autenticación / Login (Obtener Token)
+# POST para obtener el JWT con el que autenticarás al resto de peticiones
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{validEmail}}",
+  "password": "{{userPassword}}"
+}
+
+
+### 3. Lecturas - Obtener por Rango de Ki
+GET {{baseUrl}}/lecturas/rango?minimo={{kiMinimo}}&maximo={{kiMaximo}}
+Authorization: Bearer {{authToken}}
+Accept: application/json
+
+
+### 4. Lecturas - Filtrar con Paginación y Ordenamiento
+GET {{baseUrl}}/lecturas?kiMinimo={{kiMinimo}}&kiMaximo={{kiMaximo}}&ordenarPor={{ordenarPor}}&descendente=false&pagina=2&tamanioPagina=8
+Authorization: Bearer {{authToken}}
+
+### 5. Lecturas - Crear Nueva Lectura
+POST {{baseUrl}}/lecturas/crear
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "luchadorId": 1,
+  "fingerprintDispositivo": "FP-SCOUTER-RED-01",
+  "nivelKi": 150000000,
+  "rutaFotografia": "/images/goku_ssj.png"
+}
+
+### 6. Lecturas - Eliminar un Id inexistente.
+# Deberá fallar por lectura no encontrada (404).
+DELETE {{baseUrl}}/lecturas/99999
+Authorization: Bearer {{authToken}}
+
+### 7. Lecturas - Eliminar por Id (Exito con 204)
+DELETE {{baseUrl}}/lecturas/50
+Authorization: Bearer {{authToken}}
+
+### 8. Lecturas - Obtener todas las lecturas de una especie.
+GET {{baseUrl}}/lecturas/especie/{{especieBuscada}}
+Authorization: Bearer {{authToken}}
+
+### 9. Lecturas - Obtener todas las ocurrencias de un luchador.
+GET {{baseUrl}}/lecturas/luchador/{{luchadorBuscado}}
+Authorization: Bearer {{authToken}}
+
+### 10. Lecturas - Obtener todas las ocurrencias del nombre de un luchador.
+GET {{baseUrl}}/lecturas/nombre/{{nombreLuchadorBuscado}}
+Authorization: Bearer {{nombreLuchadorBuscado}}
+
+### 11. Lecturas - Obtengo los n máximos kis registrados en la app.
+GET {{baseUrl}}/lecturas/max/{{topMaximosKis}}
+Authorization: Bearer {{authToken}}
